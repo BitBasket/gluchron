@@ -1,3 +1,7 @@
+## v4.2.0
+
+* **[2026-09-20]** Replaced the custom `php:8.4-cli-bookworm` poller image with `phpexperts/dockerize` distroless PHP CLI (`phpexperts/php:8.4`) plus GnuPG. Caddy remains the public TLS front.
+
 ## v4.0.0
 
 * **[2026-09-16 03:17:00 EEST]** Extracted the engine and PWA into path-required bitbasket/gluchron-core.

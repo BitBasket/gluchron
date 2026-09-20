@@ -2,9 +2,10 @@
 #
 # Bring up GluChron with Docker Compose (poller + Caddy).
 #
-# With no arguments this builds the poller image and starts the stack detached,
-# then prints the URL from GLUCHRON_SITE. Any arguments are passed straight
-# through to `docker compose`, so day-to-day operations are:
+# PHP is phpexperts/dockerize's distroless CLI. With no arguments this builds
+# the poller image (GnuPG on top of phpexperts/php) and starts the stack
+# detached, then prints the URL from GLUCHRON_SITE. Any arguments are passed
+# straight through to `docker compose`, so day-to-day operations are:
 #
 #   ./run-server.sh                 # build + start (docker compose up -d --build)
 #   ./run-server.sh ps
@@ -93,13 +94,11 @@ require_env PGP_PASSPHRASE
 check_pgp_key PGP_PUBLIC_KEY_PATH 'BEGIN PGP PUBLIC KEY BLOCK'
 check_pgp_key PGP_PRIVATE_KEY_PATH 'BEGIN PGP PRIVATE KEY BLOCK'
 
-# The poller image is built from the sibling engine library (see Dockerfile).
-[ -d ../gluchron-core ] \
-    || die "sibling ../gluchron-core is missing; the poller image is built from it."
-
 # Caddy serves the engine PWA through symlinks in ./public that point at
 # ./vendor/bitbasket/gluchron-core/pwa (bin/link-pwa.php). That directory must
-# exist on the host before the web container starts.
+# exist on the host before the web container starts. Composer can run through
+# phpexperts/dockerize (no host PHP): vendor/bin/composer, or
+# bash <(curl -s 'https://raw.githubusercontent.com/PHPExpertsInc/dockerize/v15.x/dockerize.sh')
 [ -d vendor/bitbasket/gluchron-core/pwa ] \
     || die "engine PWA is missing at vendor/bitbasket/gluchron-core/pwa; run 'composer install' here first (see README.md)."
 

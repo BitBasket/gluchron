@@ -8,10 +8,10 @@
 #    in .env (leave GLUCHRON_SITE=:80 to serve HTTP on the droplet IP).
 # 4. docker compose up -d
 #
-# The poller container also runs the PHP API (loopback AUTH_LISTEN plus
-# /api/keys enrollment). Caddy serves ./public and reverse-proxies /api/*
-# to that API. ./data holds the PGP keys, the encrypted LibreLinkUp session,
-# and the poll-state file.
+# PHP is phpexperts/dockerize's distroless CLI (phpexperts/php:8.4). The poller
+# image only adds GnuPG on top of that. Caddy serves ./public and reverse-proxies
+# /api/* to the PHP API. ./data holds the PGP keys, the encrypted LibreLinkUp
+# session, and the poll-state file.
 
 name: gluchron
 
@@ -20,6 +20,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        PHP_VERSION: ${PHP_VERSION:-8.4}
+    image: gluchron-poller:${PHP_VERSION:-8.4}
     restart: unless-stopped
     env_file:
       - .env
@@ -28,11 +31,11 @@ services:
       TZ: UTC
       HOST: 0.0.0.0
       PORT: "8765"
+      PHP_VERSION: ${PHP_VERSION:-8.4}
     expose:
       - "8765"
     volumes:
-      - ./data:/app/data
-      - ./public:/app/public
+      - .:/workdir
     tmpfs:
       - /tmp
     security_opt:

@@ -10,7 +10,7 @@ A 1 GB DigitalOcean Droplet (or any small Linux VPS with Docker) is enough. A la
 
 ```text
 Libre 2 → LibreLink / LibreLink EG → LibreLinkUp
-  → poller container (PHP + GnuPG)
+  → poller container (phpexperts/php:8.4 + GnuPG)
   → encrypted store in ./data
   → encrypted snapshots in ./public
   → Caddy on ports 80/443
@@ -21,7 +21,7 @@ Two containers:
 
 | Service | Role |
 | --- | --- |
-| `poller` | Logs into LibreLinkUp about once a minute, stores history, writes `public/*.json.asc` |
+| `poller` | `phpexperts/php:8.4` plus GnuPG. Logs into LibreLinkUp about once a minute, stores history, writes `public/*.json.asc` |
 | `web` | Caddy serves `public/` snapshots plus the engine PWA from `vendor/bitbasket/gluchron-core/pwa/`, and with a hostname obtains a Let's Encrypt certificate |
 
 Host directories that must persist:
@@ -39,7 +39,13 @@ Host directories that must persist:
 - Outbound HTTPS to Abbott
 - Inbound TCP **22**, **80**, and **443** if this host is public
 
-PHP, Composer, and GnuPG are inside the image. You do not install them on the host.
+PHP is `phpexperts/dockerize`'s distroless CLI (`phpexperts/php:8.4`). The poller image only adds GnuPG on top of that. Composer is inside the PHP image. You still run `composer install` once on the host (or through `vendor/bin/composer` after the dockerize bootstrap) so Caddy can serve the engine PWA from `vendor/`. You do not install PHP on the host.
+
+Local CLI bootstrap (Docker only, no host PHP):
+
+```bash
+bash <(curl -s 'https://raw.githubusercontent.com/PHPExpertsInc/dockerize/v15.x/dockerize.sh')
+```
 
 ## 1. Create the host
 

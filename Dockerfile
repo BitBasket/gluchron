@@ -1,36 +1,20 @@
-FROM php:8.4-cli-bookworm
+# GluChron poller: phpexperts/dockerize distroless PHP CLI plus GnuPG.
+# PHP is not built here. Local CLI bootstrap (no host PHP):
+#   bash <(curl -s 'https://raw.githubusercontent.com/PHPExpertsInc/dockerize/v15.x/dockerize.sh')
+ARG PHP_VERSION=8.4
 
+FROM ubuntu:24.04 AS gpg
+COPY docker/grab-gpg.sh /grab-gpg.sh
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        ca-certificates \
-        gnupg \
-        unzip \
-    && rm -rf /var/lib/apt/lists/*
+    && apt-get install -y --no-install-recommends gnupg ca-certificates \
+    && rm -rf /var/lib/apt/lists/* \
+    && sh /grab-gpg.sh
 
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
-
-WORKDIR /app
-
-COPY composer.json composer.lock /app/
-RUN composer install --no-dev --no-interaction --prefer-dist --no-scripts --no-autoloader
-
-COPY bin bin
-COPY src src
-COPY public public
-COPY docker/entrypoint.sh /usr/local/bin/gluchron-entrypoint
-
-RUN composer dump-autoload --optimize --no-dev \
-    && php bin/link-pwa.php \
-    && chmod +x /usr/local/bin/gluchron-entrypoint \
-    && mkdir -p /app/data/keys /app/public
-
+FROM phpexperts/php:${PHP_VERSION}
+COPY --from=gpg /out/ /
+COPY docker/entrypoint.sh /usr/bin/gluchron-entrypoint
+WORKDIR /workdir
 ENV APP_ENV=production
-
-# Readiness = the public API is listening, so /api/keys can take the user's
-# public key. The old check looked for published snapshots, which only exist
-# *after* enrollment — so a fresh install was never healthy and Caddy could
-# start (and serve the dashboard) before enrollment was possible.
 HEALTHCHECK --interval=15s --timeout=5s --start-period=60s --retries=5 \
     CMD php -r 'exit(@fsockopen("127.0.0.1", (int) (getenv("PORT") ?: 8765)) ? 0 : 1);'
-
-ENTRYPOINT ["gluchron-entrypoint"]
+ENTRYPOINT ["/usr/bin/gluchron-entrypoint"]

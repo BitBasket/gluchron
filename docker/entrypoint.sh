@@ -1,9 +1,9 @@
 #!/bin/sh
 set -eu
 
-cd /app
+cd /workdir
 
-mkdir -p /app/data/keys /app/public /app/public/b
+mkdir -p /workdir/data/keys /workdir/public /workdir/public/b
 
 if [ ! -r "${PGP_PUBLIC_KEY_PATH:-data/keys/public.asc}" ] || [ ! -r "${PGP_PRIVATE_KEY_PATH:-data/keys/private.asc}" ]; then
     echo "PGP keys are missing; generating them with php bin/init-pgp.php"

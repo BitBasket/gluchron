@@ -32,6 +32,14 @@ This is a display. It does not recommend insulin, invent missing points, or alte
 
 ## Arch Linux requirements
 
+Native PHP is optional. The Docker poller uses `phpexperts/dockerize` (`phpexperts/php:8.4`). To get `vendor/bin/php` and `vendor/bin/composer` without installing PHP on the host:
+
+```bash
+bash <(curl -s 'https://raw.githubusercontent.com/PHPExpertsInc/dockerize/v15.x/dockerize.sh')
+```
+
+If you would rather run PHP on the host:
+
 ```bash
 sudo pacman -S php composer
 ```
@@ -43,6 +51,7 @@ Needed PHP extensions: `json`, `pdo`. PHP 8.4 or newer. The app stores no SQLite
 ```bash
 git clone <this-repo> GluChron
 cd GluChron
+bash <(curl -s 'https://raw.githubusercontent.com/PHPExpertsInc/dockerize/v15.x/dockerize.sh')
 composer install
 cp .env.example .env
 php bin/init-pgp.php
@@ -213,6 +222,10 @@ The API is unofficial and can change without notice. Client `product`/`version` 
 
 
 ## Recent Changes
+
+#### v4.2.0
+
+* **[2026-09-20]** Replace the custom Debian PHP poller image with `phpexperts/dockerize` distroless PHP CLI. Caddy stays in front for Let's Encrypt.
 
 #### v4.1.0
 

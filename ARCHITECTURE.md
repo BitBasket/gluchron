@@ -59,6 +59,10 @@ The live path uses `data/keys/user-public.asc` (the enrolled recipient), the enc
 
 For local use, `composer start`/ `composer serve` runs PHP's built-in server and the combined API/poller. `./run-server.sh` wraps `docker compose up -d --build` for the containerized stack, and `systemd/libre-glucose.service` provides a user-service option.
 
-Docker Compose has a `poller` service based on `php:8.4-cli-bookworm` with GnuPG and Composer, and a Caddy `web` service. The poller mounts `./data` and `./public`, exposes port 8765 only on the Compose network, and has a health check that the public API is listening (so `/api/keys` is reachable before any snapshots exist). Caddy serves `public` read-only, handles HTTP/HTTPS and certificates, and proxies API requests. The entrypoint creates data directories and generates server keys before starting `bin/serve.php`.
+Docker Compose has a `poller` service based on `phpexperts/php:8.4` (phpexperts/dockerize distroless CLI) with GnuPG copied in, and a Caddy `web` service. The poller mounts the project at `/workdir`, exposes port 8765 only on the Compose network, and has a health check that the public API is listening (so `/api/keys` is reachable before any snapshots exist). Caddy serves `public` read-only, handles HTTP/HTTPS and certificates, and proxies API requests. The entrypoint creates data directories and generates server keys before starting `bin/serve.php`. Local CLI without host PHP:
+
+```bash
+bash <(curl -s 'https://raw.githubusercontent.com/PHPExpertsInc/dockerize/v15.x/dockerize.sh')
+```
 
 LibreLinkUp authentication follows regional redirects, caches the bearer session encrypted, and retries one 401 once. Poll failures use backoff and leave the last successful snapshots available. Redacted UTC stderr logs report freshness and gaps; readings older than 180 seconds produce `SENSOR LOST`. PHPUnit tests under `tests/` run with `composer test`.
