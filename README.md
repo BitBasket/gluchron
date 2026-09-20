@@ -2,7 +2,7 @@
 
 A local-first Progressive Web App that shows FreeStyle Libre 2 glucose readings on a Linux laptop.
 
-The official LibreLink EG Android app remains the Bluetooth receiver. This project never talks to the sensor over BLE. It only reads the unofficial LibreLinkUp HTTP API, stores measurements in SQLite, and writes a static JSON snapshot for a localhost dashboard.
+The official LibreLink EG Android app remains the Bluetooth receiver. This project never talks to the sensor over BLE. It only reads the unofficial LibreLinkUp HTTP API, stores measurements as encrypted time-bucketed JSON snapshots, and writes a static JSON snapshot for a localhost dashboard.
 
 ```text
 Libre 2
@@ -36,7 +36,7 @@ This is a display. It does not recommend insulin, invent missing points, or alte
 sudo pacman -S php php-sqlite composer
 ```
 
-Needed PHP extensions: `json`, `pdo`, `pdo_sqlite`. PHP 8.4 or newer.
+Needed PHP extensions: `json`, `pdo`, `pdo_sqlite`. PHP 8.4 or newer. The app itself stores no SQLite; `pdo_sqlite` is only needed for `php bin/migrate-sqlite.php` (the v1 import tool).
 
 ## Install
 
@@ -131,6 +131,24 @@ That command snapshots the live SQLite file (including WAL, without stopping v1)
 | `BROWSER_POLL_SECONDS` | Dashboard poll interval, default 5 |
 | `BUCKET_SECONDS` | History batch size in seconds, default 300 |
 | `POLL_STATE_PATH` | Emitted-timestamp set. Default `data/poll-state.json` (plaintext, numbers only) |
+| `CLOUD_MIGRATE_URL` | Hosted MyLibre Cloud origin for the dashboard "Move to Cloud" button. Default empty (the endpoint then returns 503). The private key is never sent. |
+
+## Move to Cloud
+
+An unlocked dashboard can copy its encrypted history to the hosted MyLibre Cloud relay. Pressing **Move to Cloud** POSTs to `POST /api/migrate-to-cloud` on the self-host origin (same HTTPS/loopback rule as `/api/keys`). The server then sends **ciphertext only** — the enrolled user public key, the existing `public/*.json.asc` snapshots, and `data/poll-state.json` timestamps — to `{CLOUD_MIGRATE_URL}/api/self-host-migrate`, bucket uploads chunked 200 at a time. Cloud creates a tenant and returns its `/t/<id>/` capability URL.
+
+It never reads `private.asc`, never sends the passphrase, the LibreLink password, or the encrypted Abbott session (that session is encrypted to the self-host server key and is useless on Cloud). Cloud stores the snapshots as-is; it cannot decrypt them. After migrating, unlock the Cloud URL with the same downloaded key files and connect LibreLink there.
+
+Leave `CLOUD_MIGRATE_URL` empty to disable the feature.
+
+## Analytics tooling
+
+Untracked helper scripts for offline analysis of LibreView exports (not part of the dashboard):
+
+- `bin/fetch-historical-data.php` — pulls historical glucose from the LibreView interface (LibreLinkUp only exposes a ~12-hour graph). Keeps the raw response for inspection.
+- `bin/import-historical-data.php` — converts a LibreLink CSV export into a per-day 1,440-minute-column CSV; food/notes rows go to `food-log.csv`.
+- `bin/insulin-resistance-trend.sh` — compares the first and last halves of a CGM export. See `INSULIN-RESISTANCE-TREND.md` and `ANALYTICS-README.md`.
+- `bin/analyze-glucose.sh` — daily clinical range / threshold streak report (requires `bin/find-threshold-streaks.php`, not yet committed).
 
 ## LibreLink EG / Egypt
 
@@ -140,7 +158,7 @@ Egyptian LibreLink EG accounts are expected to land on whatever regional backend
 
 ## Mock provider
 
-Leave `GLUCOSE_PROVIDER=mock` to develop the dashboard without hitting Abbott. The mock still returns real `GlucoseReadingDTO` instances. The poller writes them to SQLite and the dashboard JSON files. The PWA never calls Abbott.
+Leave `GLUCOSE_PROVIDER=mock` to develop the dashboard without hitting Abbott. The mock still returns real `GlucoseReadingDTO` instances. The poller writes them to the encrypted snapshot files exactly as it does real readings. The PWA never calls Abbott.
 
 ## Run
 
@@ -166,7 +184,7 @@ In Chrome: Install page as app / Create shortcut → Open as window.
 composer test
 ```
 
-Unit tests cover DTOs, trend mapping, SQLite deduplication, mock readings, and LibreLinkUp login/region/normalization against fixtures. They do not call live Abbott servers.
+Unit tests cover DTOs, trend mapping, mock readings, and LibreLinkUp login/region/normalization against fixtures, plus the SQLite v1 import path. They do not call live Abbott servers.
 
 ## systemd user service
 
@@ -209,6 +227,11 @@ The API is unofficial and can change without notice. Client `product`/`version` 
 
 
 ## Recent Changes
+
+#### v4.1.0
+
+* **[2026-09-20]** Add the Move to Cloud button: `POST /api/migrate-to-cloud` pushes ciphertext-only history to MyLibre Cloud (`SelfHostFront`, `CloudMigrateClient`, `CLOUD_MIGRATE_URL`).
+* **[2026-09-20]** Add offline analytics tooling: LibreView history fetch/import and insulin-resistance trend scripts.
 
 #### v4.0.0
 
