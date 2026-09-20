@@ -1,6 +1,6 @@
-# MyLibre architecture
+# My GluChron architecture
 
-MyLibre is a local-first glucose dashboard. A PHP 8.4 process polls LibreLinkUp (or a deterministic mock), publishes encrypted snapshots as static files, and serves a browser PWA that decrypts and renders those files locally. It does not communicate with a Libre sensor: Abbott's LibreLink phone app uploads sensor data to LibreLinkUp first.
+GluChron is a local-first glucose dashboard. A PHP 8.4 process polls LibreLinkUp (or a deterministic mock), publishes encrypted snapshots as static files, and serves a browser PWA that decrypts and renders those files locally. It does not communicate with a Libre sensor: Abbott's LibreLink phone app uploads sensor data to LibreLinkUp first.
 
 ```
 Libre sensor → LibreLink app → LibreLinkUp → LibreLinkUpProvider
@@ -12,11 +12,11 @@ Libre sensor → LibreLink app → LibreLinkUp → LibreLinkUpProvider
 
 ## Runtime components
 
-`App\Support\App` (from `bitbasket/mycgm-core`) is the composition root. It loads `.env`, constructs logging and cryptography, selects `GLUCOSE_PROVIDER` (`librelinkup` or `mock`), and exposes the single shared `provider()`, `pollState()`, `bucketWriter()`, `recipientCrypto()`, and `authIntake()` instances. There is one `App\Poller\GlucosePoller`, built in `bin/poll-glucose.php`.
+`App\Support\App` (from `bitbasket/gluchron-core`) is the composition root. It loads `.env`, constructs logging and cryptography, selects `GLUCOSE_PROVIDER` (`librelinkup` or `mock`), and exposes the single shared `provider()`, `pollState()`, `bucketWriter()`, `recipientCrypto()`, and `authIntake()` instances. There is one `App\Poller\GlucosePoller`, built in `bin/poll-glucose.php`.
 
 `bin/serve.php` supervises the public PHP HTTP server and a poller child process. The engine `Kernel` handles API requests and passes static assets through; the poll loop periodically fetches provider data and writes snapshots. `bin/poll-glucose.php` is the poller launcher and supports `--once`; `composer poll` invokes it. The provider contract emits `GlucoseReadingDTO` values, keeping Abbott field names inside the engine `src/LibreLink/`. The mock provider supplies a 24-hour five-minute sine wave for development and tests.
 
-The browser application is the engine PWA in `vendor/bitbasket/mycgm-core/pwa/` (`bin/link-pwa.php` symlinks it into `public/`): `index.html`, `app.js`, `app.css`, `pgp.js`, OpenPGP and chart libraries, a web manifest, icons, and a service worker. It fetches status, current, and arithmetic history URLs, decrypts them with the browser-held private key, deduplicates by timestamp, and derives display age/stale state. There is no history query or manifest endpoint.
+The browser application is the engine PWA in `vendor/bitbasket/gluchron-core/pwa/` (`bin/link-pwa.php` symlinks it into `public/`): `index.html`, `app.js`, `app.css`, `pgp.js`, OpenPGP and chart libraries, a web manifest, icons, and a service worker. It fetches status, current, and arithmetic history URLs, decrypts them with the browser-held private key, deduplicates by timestamp, and derives display age/stale state. There is no history query or manifest endpoint.
 
 ## HTTP and trust boundary
 
@@ -53,7 +53,7 @@ The dashboard generates or imports a keypair in the browser, keeps the private k
 
 ## Persistent state and migrations
 
-The live path uses `data/keys/user-public.asc` (the enrolled recipient), the encrypted session cache `data/libre-session.json.asc`, poll state `data/poll-state.json` (timestamps only), and encrypted files under `public/`. Historical storage formats are supported only as migration sources: `bin/migrate-history.php` converts them into buckets and refreshes exports, while `bin/upgrade-glucose-data-version.php` produces the older dense CSV import format. `bin/poll-glucose-offline.php` polls with `.env` credentials and merges readings into the dashboard-importable dense CSV (`data/mylibre.history.csv` by default) through `CsvHistoryStore`. Run bucket migrations with the poller stopped. `src/Database/` contains no SQLite code.
+The live path uses `data/keys/user-public.asc` (the enrolled recipient), the encrypted session cache `data/libre-session.json.asc`, poll state `data/poll-state.json` (timestamps only), and encrypted files under `public/`. Historical storage formats are supported only as migration sources: `bin/migrate-history.php` converts them into buckets and refreshes exports, while `bin/upgrade-glucose-data-version.php` produces the older dense CSV import format. `bin/poll-glucose-offline.php` polls with `.env` credentials and merges readings into the dashboard-importable dense CSV (`data/gluchron.history.csv` by default) through `CsvHistoryStore`. Run bucket migrations with the poller stopped. `src/Database/` contains no SQLite code.
 
 ## Deployment and verification
 

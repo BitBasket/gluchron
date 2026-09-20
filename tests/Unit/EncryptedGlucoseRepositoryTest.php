@@ -14,7 +14,7 @@ final class EncryptedGlucoseRepositoryTest extends TestCase
 {
     public function testInsertLatestHistoryAndDedup(): void
     {
-        $dir = sys_get_temp_dir() . '/mylibre-enc-repo-' . uniqid('', true);
+        $dir = sys_get_temp_dir() . '/gluchron-enc-repo-' . uniqid('', true);
         mkdir($dir, 0700, true);
         $crypto = PgpKeyFactory::make($dir);
         $path = $dir . '/glucose.json.asc';
@@ -51,7 +51,7 @@ final class EncryptedGlucoseRepositoryTest extends TestCase
 
     public function testImportDeduplicatesByTimestamp(): void
     {
-        $dir = sys_get_temp_dir() . '/mylibre-enc-import-' . uniqid('', true);
+        $dir = sys_get_temp_dir() . '/gluchron-enc-import-' . uniqid('', true);
         mkdir($dir, 0700, true);
         $crypto = PgpKeyFactory::make($dir);
         $repository = new EncryptedGlucoseRepository($dir . '/glucose.json.asc', $crypto, 'test-passphrase');
@@ -78,7 +78,7 @@ final class EncryptedGlucoseRepositoryTest extends TestCase
 
     public function testImportMergesUnsortedBatchOnceAndKeepsFirstDuplicate(): void
     {
-        $dir = sys_get_temp_dir() . '/mylibre-enc-import-batch-' . uniqid('', true);
+        $dir = sys_get_temp_dir() . '/gluchron-enc-import-batch-' . uniqid('', true);
         mkdir($dir, 0700, true);
         $crypto = PgpKeyFactory::make($dir);
         $repository = new EncryptedGlucoseRepository($dir . '/glucose.json.asc', $crypto, 'test-passphrase');

@@ -1,1 +1,1 @@
-../vendor/bitbasket/mycgm-core/pwa/app.js
+../vendor/bitbasket/gluchron-core/pwa/app.js

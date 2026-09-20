@@ -10,7 +10,7 @@ final class FetchHistoricalDataScriptTest extends TestCase
 {
     public function testDownloadUrlRejectsHttpAndDoesNotCreateCsv(): void
     {
-        $out = tempnam(sys_get_temp_dir(), 'mylibre-history-');
+        $out = tempnam(sys_get_temp_dir(), 'gluchron-history-');
         self::assertIsString($out);
         unlink($out);
 
@@ -23,7 +23,7 @@ final class FetchHistoricalDataScriptTest extends TestCase
 
     public function testDownloadUrlCannotBeCombinedWithExtractionOptions(): void
     {
-        $out = tempnam(sys_get_temp_dir(), 'mylibre-history-');
+        $out = tempnam(sys_get_temp_dir(), 'gluchron-history-');
         self::assertIsString($out);
         unlink($out);
 
@@ -40,7 +40,7 @@ final class FetchHistoricalDataScriptTest extends TestCase
 
     public function testMissingInteractiveInputFailsExplicitly(): void
     {
-        $out = tempnam(sys_get_temp_dir(), 'mylibre-history-');
+        $out = tempnam(sys_get_temp_dir(), 'gluchron-history-');
         self::assertIsString($out);
         unlink($out);
 

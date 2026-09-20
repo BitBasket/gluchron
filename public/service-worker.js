@@ -1,1 +1,1 @@
-../vendor/bitbasket/mycgm-core/pwa/service-worker.js
+../vendor/bitbasket/gluchron-core/pwa/service-worker.js

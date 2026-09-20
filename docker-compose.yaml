@@ -1,11 +1,11 @@
-# MyLibre on a DigitalOcean Droplet
+# GluChron on a DigitalOcean Droplet
 #
 # 1. Create a Docker Droplet (1 GB is enough). Open TCP 22, 80, and 443.
 # 2. Clone this repo onto the droplet, then:
 #      cp .env.example .env   # fill LibreLinkUp + PGP_PASSPHRASE
 #      # Optional: copy existing data/keys/*.asc and data/*.asc onto the host
-# 3. Point an A/AAAA record at the droplet and set MYLIBRE_SITE to that hostname
-#    in .env (leave MYLIBRE_SITE=:80 to serve HTTP on the droplet IP).
+# 3. Point an A/AAAA record at the droplet and set GLUCHRON_SITE to that hostname
+#    in .env (leave GLUCHRON_SITE=:80 to serve HTTP on the droplet IP).
 # 4. docker compose up -d
 #
 # The poller container also runs the PHP API (loopback AUTH_LISTEN plus
@@ -13,7 +13,7 @@
 # to that API. ./data holds the PGP keys, the encrypted LibreLinkUp session,
 # and the poll-state file.
 
-name: mylibre
+name: gluchron
 
 services:
   poller:
@@ -59,14 +59,14 @@ services:
       - "443:443"
       - "443:443/udp"
     environment:
-      MYLIBRE_SITE: ${MYLIBRE_SITE:-:80}
+      GLUCHRON_SITE: ${GLUCHRON_SITE:-:80}
     volumes:
       - ./public:/srv:ro
       # bin/link-pwa.php symlinks the engine PWA into public/ with relative
-      # targets (../vendor/bitbasket/mycgm-core/pwa/...). Caddy's root is /srv,
+      # targets (../vendor/bitbasket/gluchron-core/pwa/...). Caddy's root is /srv,
       # so ../vendor resolves to /vendor inside the container: mount the PWA
       # there or every symlink dangles (404 assets, 404 on /).
-      - ./vendor/bitbasket/mycgm-core/pwa:/vendor/bitbasket/mycgm-core/pwa:ro
+      - ./vendor/bitbasket/gluchron-core/pwa:/vendor/bitbasket/gluchron-core/pwa:ro
       - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config

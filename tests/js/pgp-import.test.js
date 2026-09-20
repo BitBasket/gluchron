@@ -51,7 +51,7 @@ function loadPgpVault() {
     sandbox.global = sandbox;
     sandbox.globalThis = sandbox;
     vm.createContext(sandbox);
-    const pwa = path.join(root, 'vendor/bitbasket/mycgm-core/pwa');
+    const pwa = path.join(root, 'vendor/bitbasket/gluchron-core/pwa');
     vm.runInContext(fs.readFileSync(path.join(pwa, 'vendor/openpgp.min.js'), 'utf8'), sandbox);
     vm.runInContext(fs.readFileSync(path.join(pwa, 'pgp.js'), 'utf8'), sandbox);
     return { openpgp: sandbox.openpgp, PgpVault: sandbox.PgpVault };
@@ -71,7 +71,7 @@ function gpg(home, args, input) {
 
 async function main() {
     const { openpgp, PgpVault } = loadPgpVault();
-    const home = fs.mkdtempSync(path.join(os.tmpdir(), 'mylibre-pgp-import-'));
+    const home = fs.mkdtempSync(path.join(os.tmpdir(), 'gluchron-pgp-import-'));
     fs.chmodSync(home, 0o700);
 
     try {
@@ -113,7 +113,7 @@ async function main() {
             '--pinentry-mode', 'loopback',
             '--passphrase', 'key-passphrase-12',
             '--quick-generate-key',
-            'MyLibre Test <mylibre@example.com>',
+            'GluChron Test <gluchron@example.com>',
             'default',
             'default',
             'never',

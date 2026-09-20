@@ -1,4 +1,4 @@
-# MyLibre Glucose Dashboard
+# My GluChron
 
 A local-first Progressive Web App that shows FreeStyle Libre 2 glucose readings on a Linux laptop.
 
@@ -18,7 +18,7 @@ Libre 2
 
 ## Architecture
 
-Abbott-specific URLs, headers, region names, account IDs, and JSON field names stay inside `bitbasket/mycgm-core` (`src/LibreLink/`). This app requires that Composer library (resolved from `https://github.com/BitBasket/mycgm-core.git`). The rest of the app only sees `GlucoseReadingDTO` values from `phpexperts/simple-dto`.
+Abbott-specific URLs, headers, region names, account IDs, and JSON field names stay inside `bitbasket/gluchron-core` (`src/LibreLink/`). This app requires that Composer library (resolved from `https://github.com/BitBasket/gluchron-core.git`). The rest of the app only sees `GlucoseReadingDTO` values from `phpexperts/simple-dto`.
 
 `phpexperts/rest-speaker` is the only HTTP client used against Abbott. Login uses `RESTSpeaker` + `NoAuth`. Authenticated calls use `LibreLinkUpAuth`, a custom `RESTAuth` strategy that injects the Bearer token, SHA-256 `Account-Id`, product, and client version. RESTSpeaker is not passed into repositories or DTOs.
 
@@ -41,14 +41,14 @@ Needed PHP extensions: `json`, `pdo`. PHP 8.4 or newer. The app stores no SQLite
 ## Install
 
 ```bash
-git clone <this-repo> MyLibre
-cd MyLibre
+git clone <this-repo> GluChron
+cd GluChron
 composer install
 cp .env.example .env
 php bin/init-pgp.php
 ```
 
-`composer install` pulls the engine library `bitbasket/mycgm-core` (`dev-trunk`) from `https://github.com/BitBasket/mycgm-core.git` via Composer. Do not copy the engine `src/` or `pwa/` into this tree.
+`composer install` pulls the engine library `bitbasket/gluchron-core` (`dev-trunk`) from `https://github.com/BitBasket/gluchron-core.git` via Composer. Do not copy the engine `src/` or `pwa/` into this tree.
 
 Credentials belong only in `.env`. That file is gitignored.
 
@@ -89,7 +89,7 @@ History now lives in immutable time-bucketed batches under `public/b/`. If you h
 php bin/migrate-history.php
 
 # v2 JSON object array → dense dashboard CSV (import in the UI)
-php bin/upgrade-glucose-data-version.php -o mylibre.history.csv
+php bin/upgrade-glucose-data-version.php -o gluchron.history.csv
 ```
 
 `migrate-history` decrypts the old store, groups readings into buckets, writes `public/b/*.json.asc`, records emitted timestamps in `data/poll-state.json`, and refreshes `current.json.asc`/`status.json.asc`. It does not modify the source. Old `public/history-*.json.asc` day files are no longer read and can be deleted.
@@ -117,11 +117,11 @@ php bin/upgrade-glucose-data-version.php -o mylibre.history.csv
 | `BROWSER_POLL_SECONDS` | Dashboard poll interval, default 5 |
 | `BUCKET_SECONDS` | History batch size in seconds, default 300 |
 | `POLL_STATE_PATH` | Emitted-timestamp set. Default `data/poll-state.json` (plaintext, numbers only) |
-| `CLOUD_MIGRATE_URL` | Hosted MyLibre Cloud origin for the dashboard "Move to Cloud" button. Default empty (the endpoint then returns 503). The private key is never sent. |
+| `CLOUD_MIGRATE_URL` | Hosted GluChron Cloud origin for the dashboard "Move to Cloud" button. Default empty (the endpoint then returns 503). The private key is never sent. |
 
 ## Move to Cloud
 
-An unlocked dashboard can copy its encrypted history to the hosted MyLibre Cloud relay. Pressing **Move to Cloud** POSTs to `POST /api/migrate-to-cloud` on the self-host origin (same HTTPS/loopback rule as `/api/keys`). The server then sends **ciphertext only** — the enrolled user public key, the existing `public/*.json.asc` snapshots, and `data/poll-state.json` timestamps — to `{CLOUD_MIGRATE_URL}/api/self-host-migrate`, bucket uploads chunked 200 at a time. Cloud creates a tenant and returns its `/t/<id>/` capability URL.
+An unlocked dashboard can copy its encrypted history to the hosted GluChron Cloud relay. Pressing **Move to Cloud** POSTs to `POST /api/migrate-to-cloud` on the self-host origin (same HTTPS/loopback rule as `/api/keys`). The server then sends **ciphertext only** — the enrolled user public key, the existing `public/*.json.asc` snapshots, and `data/poll-state.json` timestamps — to `{CLOUD_MIGRATE_URL}/api/self-host-migrate`, bucket uploads chunked 200 at a time. Cloud creates a tenant and returns its `/t/<id>/` capability URL.
 
 It never reads `private.asc`, never sends the passphrase, the LibreLink password, or the encrypted Abbott session (that session is encrypted to the self-host server key and is useless on Cloud). Cloud stores the snapshots as-is; it cannot decrypt them. After migrating, unlock the Cloud URL with the same downloaded key files and connect LibreLink there.
 
@@ -177,7 +177,7 @@ Unit tests cover DTOs, trend mapping, mock readings, and LibreLinkUp login/regio
 ```bash
 mkdir -p ~/.config/systemd/user
 cp systemd/libre-glucose.service ~/.config/systemd/user/
-# edit WorkingDirectory and ExecStart if this clone is not /code/MyLibre
+# edit WorkingDirectory and ExecStart if this clone is not /code/GluChron
 systemctl --user daemon-reload
 systemctl --user enable --now libre-glucose.service
 journalctl --user -u libre-glucose -f
@@ -216,13 +216,13 @@ The API is unofficial and can change without notice. Client `product`/`version` 
 
 #### v4.1.0
 
-* **[2026-09-20]** Add the Move to Cloud button: `POST /api/migrate-to-cloud` pushes ciphertext-only history to MyLibre Cloud (`SelfHostFront`, `CloudMigrateClient`, `CLOUD_MIGRATE_URL`).
+* **[2026-09-20]** Add the Move to Cloud button: `POST /api/migrate-to-cloud` pushes ciphertext-only history to GluChron Cloud (`SelfHostFront`, `CloudMigrateClient`, `CLOUD_MIGRATE_URL`).
 * **[2026-09-20]** Add offline analytics tooling: LibreView history fetch/import and insulin-resistance trend scripts.
 * **[2026-09-20]** Remove all SQLite storage and the v1 `migrate-sqlite` tool; the app is snapshot-file only.
 
 #### v4.0.0
 
-* **[2026-09-16 03:17:00 EEST]** Extracted the engine and PWA into path-required bitbasket/mycgm-core.
+* **[2026-09-16 03:17:00 EEST]** Extracted the engine and PWA into path-required bitbasket/gluchron-core.
 * **[2026-09-14 11:19:59 EEST]** Make the self-host app single-tenant again: one dashboard at /
 * **[2026-09-14 07:19:43 EEST]** Rewrite ARCHITECTURE.md as a whole-system overview.
 * **[2026-09-14 08:04:46 EEST]** Encrypt published snapshots only to the enrolled user public key.

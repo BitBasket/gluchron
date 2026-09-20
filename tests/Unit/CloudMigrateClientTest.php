@@ -52,7 +52,7 @@ final class CloudMigrateClientTest extends TestCase
         $this->assertSame('https://cloud.example/t/abcdefghijklmnopqrstuv/api/import', $posts[1]['url']);
 
         $first = json_decode($posts[0]['body'], true, 512, JSON_THROW_ON_ERROR);
-        $this->assertSame('mylibre.self-host-migrate', $first['schema']);
+        $this->assertSame('gluchron.self-host-migrate', $first['schema']);
         $this->assertStringContainsString('BEGIN PGP PUBLIC KEY', $first['publicKey']);
         $this->assertArrayHasKey('100', $first['buckets']);
         $this->assertSame(50, $first['pollState']['firstReadingAt']);
@@ -92,7 +92,7 @@ final class CloudMigrateClientTest extends TestCase
 
     public function testFrontDoorLeavesTenantsOnTheEngine(): void
     {
-        $dir = sys_get_temp_dir() . '/mylibre-front-' . uniqid('', true);
+        $dir = sys_get_temp_dir() . '/gluchron-front-' . uniqid('', true);
         mkdir($dir . '/public', 0700, true);
         $kernel = new Kernel($dir . '/public', '', new \App\Http\KeyEnrollmentHandler($dir . '/user-public.asc'));
         $client = new CloudMigrateClient(
@@ -150,7 +150,7 @@ final class CloudMigrateClientTest extends TestCase
 
     private function fixture(): string
     {
-        $root = sys_get_temp_dir() . '/mylibre-cloud-client-' . uniqid('', true);
+        $root = sys_get_temp_dir() . '/gluchron-cloud-client-' . uniqid('', true);
         mkdir($root . '/public/b', 0700, true);
         mkdir($root . '/data/keys', 0700, true);
         file_put_contents($root . '/data/keys/user-public.asc', "-----BEGIN PGP PUBLIC KEY BLOCK-----\npub\n-----END PGP PUBLIC KEY BLOCK-----\n");

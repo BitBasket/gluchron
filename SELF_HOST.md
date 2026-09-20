@@ -1,6 +1,6 @@
-# Self-host MyLibre
+# Self-host My GluChron
 
-This is the custody path: you run the poller and dashboard on a machine you control. LibreLink (or LibreLink EG) remains the Bluetooth receiver. MyLibre only calls the unofficial LibreLinkUp HTTP API, encrypts readings with your PGP key, and serves a static PWA.
+This is the custody path: you run the poller and dashboard on a machine you control. LibreLink (or LibreLink EG) remains the Bluetooth receiver. GluChron only calls the unofficial LibreLinkUp HTTP API, encrypts readings with your PGP key, and serves a static PWA.
 
 The poller sees LibreLinkUp plaintext in RAM while it encrypts. Keys, the passphrase, and Abbott credentials stay on your host. They are never sent to the browser.
 
@@ -22,13 +22,13 @@ Two containers:
 | Service | Role |
 | --- | --- |
 | `poller` | Logs into LibreLinkUp about once a minute, stores history, writes `public/*.json.asc` |
-| `web` | Caddy serves `public/` snapshots plus the engine PWA from `vendor/bitbasket/mycgm-core/pwa/`, and with a hostname obtains a Let's Encrypt certificate |
+| `web` | Caddy serves `public/` snapshots plus the engine PWA from `vendor/bitbasket/gluchron-core/pwa/`, and with a hostname obtains a Let's Encrypt certificate |
 
 Host directories that must persist:
 
 - `./data` — PGP keys, encrypted glucose store, encrypted LibreLinkUp session
-- `./public` — encrypted dashboard snapshots (PWA is `vendor/bitbasket/mycgm-core/pwa/`)
-- `./vendor/bitbasket/mycgm-core/pwa` — engine dashboard (from Composer)
+- `./public` — encrypted dashboard snapshots (PWA is `vendor/bitbasket/gluchron-core/pwa/`)
+- `./vendor/bitbasket/gluchron-core/pwa` — engine dashboard (from Composer)
 - `.env` — LibreLinkUp credentials and `PGP_PASSPHRASE` (gitignored)
 
 ## Requirements
@@ -58,8 +58,8 @@ docker compose version
 ## 2. Clone and configure
 
 ```bash
-git clone -b v2.x https://github.com/BitBasket/MyLibre.git
-cd MyLibre
+git clone -b v2.x https://github.com/BitBasket/GluChron.git
+cd GluChron
 cp .env.example .env
 chmod 600 .env
 ```
@@ -73,7 +73,7 @@ LIBRELINK_EMAIL=you@example.com
 LIBRELINK_PASSWORD=your-librelinkup-password
 LIBRELINK_REGION=AUTO
 PGP_PASSPHRASE=a-long-passphrase-you-will-keep
-MYLIBRE_SITE=:80
+GLUCHRON_SITE=:80
 ```
 
 Notes:
@@ -81,7 +81,7 @@ Notes:
 - `LIBRELINK_REGION=AUTO` follows Abbott's JSON region redirect (Egyptian LibreLink EG accounts often land on `ae`). Set `LIBRELINK_BASE_URI` only if discovery is wrong.
 - `LIBRELINK_PATIENT_ID` is needed when the LibreLinkUp account has more than one connection.
 - Do not set `ABBOTT_POLL_SECONDS` below 60. Abbott rate-limits.
-- `MYLIBRE_SITE=:80` serves HTTP on the droplet IP. Change it after DNS (next section).
+- `GLUCHRON_SITE=:80` serves HTTP on the droplet IP. Change it after DNS (next section).
 - Do not commit `.env`.
 
 ### Bring existing keys and history
@@ -122,7 +122,7 @@ Open `http://<droplet-ip>/` only to confirm Caddy is up. Key enrollment and the 
 Point an A (and AAAA, if you have IPv6) record at the droplet. Wait until it resolves, then in `.env`:
 
 ```env
-MYLIBRE_SITE=glucose.example.com
+GLUCHRON_SITE=glucose.example.com
 ```
 
 Reload Caddy so it can obtain a certificate:
@@ -133,7 +133,7 @@ docker compose up -d
 
 Caddy listens on 80 and 443. Let's Encrypt HTTP-01 must reach port 80 on that hostname. If issuance fails, `docker compose logs web` shows the ACME error.
 
-IP addresses do not get public certificates. Leave `MYLIBRE_SITE=:80` until you have a hostname.
+IP addresses do not get public certificates. Leave `GLUCHRON_SITE=:80` until you have a hostname.
 
 ## 5. Unlock and install the PWA
 
@@ -213,7 +213,7 @@ The password is never written to the session file.
 
 **Empty or wrong patient.** Set `LIBRELINK_PATIENT_ID` to the id shown in LibreLinkUp.
 
-**Caddy certificate fails.** DNS must point at this host, ports 80 and 443 must be open, and `MYLIBRE_SITE` must be the hostname (not `:80` and not an IP).
+**Caddy certificate fails.** DNS must point at this host, ports 80 and 443 must be open, and `GLUCHRON_SITE` must be the hostname (not `:80` and not an IP).
 
 **Nothing on port 80.** Another process may already bind 80. `ss -lptn 'sport = :80'` on the host; `docker compose logs web` for Caddy.
 

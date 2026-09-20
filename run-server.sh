@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #
-# Bring up MyLibre with Docker Compose (poller + Caddy).
+# Bring up GluChron with Docker Compose (poller + Caddy).
 #
 # With no arguments this builds the poller image and starts the stack detached,
-# then prints the URL from MYLIBRE_SITE. Any arguments are passed straight
+# then prints the URL from GLUCHRON_SITE. Any arguments are passed straight
 # through to `docker compose`, so day-to-day operations are:
 #
 #   ./run-server.sh                 # build + start (docker compose up -d --build)
@@ -76,7 +76,7 @@ if [ ! -f .env ]; then
     cp .env.example .env
     chmod 600 .env
     printf 'Created .env from .env.example.\n'
-    printf 'Edit .env (LIBRELINK_EMAIL, LIBRELINK_PASSWORD, PGP_PASSPHRASE, MYLIBRE_SITE) before exposing this host.\n'
+    printf 'Edit .env (LIBRELINK_EMAIL, LIBRELINK_PASSWORD, PGP_PASSPHRASE, GLUCHRON_SITE) before exposing this host.\n'
 fi
 
 # Anything else is a docker compose subcommand (ps, logs, down, ...); run it
@@ -94,19 +94,19 @@ check_pgp_key PGP_PUBLIC_KEY_PATH 'BEGIN PGP PUBLIC KEY BLOCK'
 check_pgp_key PGP_PRIVATE_KEY_PATH 'BEGIN PGP PRIVATE KEY BLOCK'
 
 # The poller image is built from the sibling engine library (see Dockerfile).
-[ -d ../mycgm-core ] \
-    || die "sibling ../mycgm-core is missing; the poller image is built from it."
+[ -d ../gluchron-core ] \
+    || die "sibling ../gluchron-core is missing; the poller image is built from it."
 
 # Caddy serves the engine PWA through symlinks in ./public that point at
-# ./vendor/bitbasket/mycgm-core/pwa (bin/link-pwa.php). That directory must
+# ./vendor/bitbasket/gluchron-core/pwa (bin/link-pwa.php). That directory must
 # exist on the host before the web container starts.
-[ -d vendor/bitbasket/mycgm-core/pwa ] \
-    || die "engine PWA is missing at vendor/bitbasket/mycgm-core/pwa; run 'composer install' here first (see README.md)."
+[ -d vendor/bitbasket/gluchron-core/pwa ] \
+    || die "engine PWA is missing at vendor/bitbasket/gluchron-core/pwa; run 'composer install' here first (see README.md)."
 
 docker compose up -d --build
 docker compose ps
 
-site="$(env_value MYLIBRE_SITE)"
+site="$(env_value GLUCHRON_SITE)"
 case "$site" in
     "" | ":80") url="http://localhost/" ;;
     :*) url="http://localhost${site}/" ;;
@@ -114,6 +114,6 @@ case "$site" in
     *) url="https://${site}/" ;;
 esac
 
-printf '\nMyLibre is up. URL: %s\n' "$url"
+printf '\nGluChron is up. URL: %s\n' "$url"
 printf 'Logs: ./run-server.sh logs -f poller  (or -f web)\n'
 printf 'Stop: ./run-server.sh down\n'

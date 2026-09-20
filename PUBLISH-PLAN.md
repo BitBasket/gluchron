@@ -1,12 +1,12 @@
-# MyLibre Publication and Product Plan
+# GluChron Publication and Product Plan
 
 ## Purpose of this document
 
-This document captures the product vision, lived problem, architectural decisions, commercial requirements, privacy model, unresolved questions, and rejected approaches discussed for MyLibre. It is intended to give another engineer or LLM enough context to continue the work without asking the founder to repeat the conversation or reintroducing approaches that have already been rejected.
+This document captures the product vision, lived problem, architectural decisions, commercial requirements, privacy model, unresolved questions, and rejected approaches discussed for GluChron. It is intended to give another engineer or LLM enough context to continue the work without asking the founder to repeat the conversation or reintroducing approaches that have already been rejected.
 
 The central constraint is explicit:
 
-> MyLibre should use ephemeral/serverless workers and temporary encrypted object storage. It should not require a $4-per-user Droplet, a persistent application server, PHP, SQLite, or another conventional database.
+> GluChron should use ephemeral/serverless workers and temporary encrypted object storage. It should not require a $4-per-user Droplet, a persistent application server, PHP, SQLite, or another conventional database.
 
 ## Founder and originating problem
 
@@ -24,11 +24,11 @@ The founder has minute-level CGM information throughout each day and wants to us
 - Future custom monitors and interfaces.
 - Long-term freedom from a single CGM vendor.
 
-The official LibreLink application remains the Bluetooth receiver. MyLibre currently obtains readings through the unofficial LibreLinkUp HTTP API; it does not communicate with the sensor over BLE.
+The official LibreLink application remains the Bluetooth receiver. GluChron currently obtains readings through the unofficial LibreLinkUp HTTP API; it does not communicate with the sensor over BLE.
 
 ## Product mission
 
-MyLibre is intended to provide:
+GluChron is intended to provide:
 
 1. **Self-sovereignty of data.** Users control their histories, encryption keys, exports, and optional backup storage. The service must not trap their data or require a delayed export request.
 2. **Interface freedom.** CGM data should not be geo-locked or platform-locked. A user should be able to build or use browser, desktop, wearable, clinician, and analysis interfaces.
@@ -65,7 +65,7 @@ Scheduled ephemeral worker, approximately once per minute
   -> encrypt immediately to the user's public key
   -> append an encrypted JSON batch to temporary object storage
 
-User opens MyLibre web app
+User opens GluChron web app
   -> authenticate the user's device
   -> list and download pending encrypted batches
   -> decrypt in the browser
@@ -156,7 +156,7 @@ The intended model resembles WhatsApp backup to Google Drive:
 - The browser encrypts the durable history before upload.
 - The private decryption key remains under the user's control.
 - The persistent bucket or storage allocation should be in the user's name/account where possible.
-- The storage may be provisioned, billed, or managed through MyLibre on the user's behalf if a provider supports that commercial arrangement.
+- The storage may be provisioned, billed, or managed through GluChron on the user's behalf if a provider supports that commercial arrangement.
 - Disabling the paid backup must not prevent access to the local history or immediate export.
 
 Google Drive, OneDrive, Dropbox, and user-controlled S3-compatible storage are possible backup targets. Google Drive's application-data OAuth flow is attractive because many consumers already have an account and quota, but this does not solve ownership of the polling function itself.
@@ -175,7 +175,7 @@ Modern audited authenticated encryption suitable for Rust and browser WebCrypto 
 
 ### Important limitation
 
-LibreLinkUp does not encrypt its response to the user's MyLibre public key. Therefore, the polling worker necessarily sees each response briefly in readable memory before encrypting it. It also needs access to the user's LibreLinkUp credential or reusable session token.
+LibreLinkUp does not encrypt its response to the user's GluChron public key. Therefore, the polling worker necessarily sees each response briefly in readable memory before encrypting it. It also needs access to the user's LibreLinkUp credential or reusable session token.
 
 The accurate claim for a cloud-poller deployment is therefore along the lines of:
 
@@ -183,13 +183,13 @@ The accurate claim for a cloud-poller deployment is therefore along the lines of
 
 Do not claim that the polling environment never processes plaintext.
 
-If the worker and object storage run in a cloud account truly owned and controlled by the user, and MyLibre has no standing administrative access, telemetry, logs, or credentials, the company may be only a software publisher rather than a processor of the glucose readings. That legal distinction depends on actual ownership, access, and determination of processing means, not on marketing language or who reimburses the bill.
+If the worker and object storage run in a cloud account truly owned and controlled by the user, and GluChron has no standing administrative access, telemetry, logs, or credentials, the company may be only a software publisher rather than a processor of the glucose readings. That legal distinction depends on actual ownership, access, and determination of processing means, not on marketing language or who reimburses the bill.
 
-If resources run in MyLibre's cloud account or MyLibre retains administrative access, the company should assume it processes health data even if humans never inspect it.
+If resources run in GluChron's cloud account or GluChron retains administrative access, the company should assume it processes health data even if humans never inspect it.
 
 ### Web-code trust limitation
 
-Browser-side decryption code served dynamically from MyLibre's Hetzner server could theoretically be modified by a compromised server to capture a password or key. Mitigations include:
+Browser-side decryption code served dynamically from GluChron's Hetzner server could theoretically be modified by a compromised server to capture a password or key. Mitigations include:
 
 - No third-party scripts or analytics on authenticated/decrypting pages.
 - Strict Content Security Policy.
@@ -242,16 +242,16 @@ Source availability is part of the trust proposition: users and auditors should 
 The product should feel like WHMCS or a commercial one-click application:
 
 - The user pays once through a simple consumer-friendly flow.
-- MyLibre receives recurring revenue.
+- GluChron receives recurring revenue.
 - The ephemeral function, secret storage, and object-storage allocation are technically the user's resources where possible.
-- MyLibre provisions and maintains them on the user's behalf.
+- GluChron provisions and maintains them on the user's behalf.
 - Resources should be geographically local to the user's residence where practical, with EU hosting as the fallback preference.
 - The user should not have to understand IAM, Lambda, S3, CloudFormation, cloud regions, or API keys.
-- There must be a real exit: export, revoke management access, migrate, and delete without MyLibre holding the data hostage.
+- There must be a real exit: export, revoke management access, migrate, and delete without GluChron holding the data hostage.
 
 The remaining central business/technology question is:
 
-> Which cloud or reseller platform permits MyLibre to sell and provision tiny scheduled functions plus temporary object storage into a resource boundary genuinely owned or controlled by the user, while presenting one simple payment path and avoiding a painful cloud-provider signup?
+> Which cloud or reseller platform permits GluChron to sell and provision tiny scheduled functions plus temporary object storage into a resource boundary genuinely owned or controlled by the user, while presenting one simple payment path and avoiding a painful cloud-provider signup?
 
 ### Approaches investigated
 
@@ -289,11 +289,11 @@ These should be investigated directly with their marketplace/partner teams rathe
 
 #### Cloudflare Workers and R2
 
-Workers, cron triggers, and R2 are technically well suited to this workload, but the consumer still needs a Cloudflare account/payment method for customer-owned resources, and no confirmed Marketplace flow was found that combines MyLibre licensing with customer-owned Workers/R2 in one simple purchase. A reseller, agency, or platform partnership might change this and warrants direct investigation.
+Workers, cron triggers, and R2 are technically well suited to this workload, but the consumer still needs a Cloudflare account/payment method for customer-owned resources, and no confirmed Marketplace flow was found that combines GluChron licensing with customer-owned Workers/R2 in one simple purchase. A reseller, agency, or platform partnership might change this and warrants direct investigation.
 
-#### MyLibre-owned shared infrastructure
+#### GluChron-owned shared infrastructure
 
-A shared serverless deployment in MyLibre's account is likely the cheapest and easiest consumer experience. Tenant payloads can be immediately encrypted and retained only as an ephemeral relay. However, the infrastructure would not technically belong to each user, and the cloud worker would still process plaintext responses momentarily.
+A shared serverless deployment in GluChron's account is likely the cheapest and easiest consumer experience. Tenant payloads can be immediately encrypted and retained only as an ephemeral relay. However, the infrastructure would not technically belong to each user, and the cloud worker would still process plaintext responses momentarily.
 
 This may be an honest managed-service tier if described accurately, but it does not fully achieve the strongest infrastructure-sovereignty objective.
 
@@ -303,7 +303,7 @@ Ordinary cloud contracts make it difficult to obtain all three simultaneously:
 
 1. The resources legally/technically belong to the user.
 2. The user never creates or authorizes a provider account.
-3. MyLibre invisibly provisions, maintains, and bills everything through one consumer checkout.
+3. GluChron invisibly provisions, maintains, and bills everything through one consumer checkout.
 
 Potential ways forward include a true reseller/white-label agreement, provider Marketplace billing, transferable subaccounts, billing-transfer arrangements that do not grant administrative control, or redefining sovereignty primarily through encryption and immediate portability rather than literal ownership of compute resources.
 
@@ -368,13 +368,13 @@ Hosting the static web frontend on the founder's Hetzner server in Frankfurt is 
 
 Potential concise positioning:
 
-> Your CGM data, freed from regional and platform locks. MyLibre continuously collects it, encrypts it to your key, delivers it to your devices, and gets out of the way.
+> Your CGM data, freed from regional and platform locks. GluChron continuously collects it, encrypts it to your key, delivers it to your devices, and gets out of the way.
 
 For a deployment in genuinely user-controlled cloud resources:
 
 > Your worker, your storage, your keys, your data. We make it effortless to install and maintain.
 
-For a MyLibre-owned managed relay, use narrower and accurate language:
+For a GluChron-owned managed relay, use narrower and accurate language:
 
 > Your history lives on your device. We retain only encrypted delivery packets, delete them after successful synchronization, and expire anything uncollected after 30 days.
 
@@ -382,7 +382,7 @@ For a MyLibre-owned managed relay, use narrower and accurate language:
 
 Another LLM or product architect should focus on these questions in order:
 
-1. Identify providers or commercial reseller programs that support customer-owned scheduled functions and object storage with one simple MyLibre-mediated payment flow.
+1. Identify providers or commercial reseller programs that support customer-owned scheduled functions and object storage with one simple GluChron-mediated payment flow.
 2. Compare the legal and technical meaning of ownership under provider subaccounts, organizations, projects, namespaces, and billing-transfer arrangements.
 3. Determine whether literal infrastructure ownership is essential for the default tier, or whether cryptographic control plus instant portability is sufficient, with bring-your-own-cloud offered separately.
 4. Produce a provider-neutral Rust serverless design and cost model at 100, 10,000, and 1,000,000 active users.

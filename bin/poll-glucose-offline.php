@@ -13,7 +13,7 @@ use App\Support\Env;
 $root = dirname(__DIR__);
 $app = App\Support\App::boot($root);
 $once = false;
-$csvPath = $root . '/data/mylibre.history.csv';
+$csvPath = $root . '/data/gluchron.history.csv';
 
 $takeOutput = false;
 foreach (array_slice($argv, 1) as $arg) {
@@ -38,8 +38,8 @@ foreach (array_slice($argv, 1) as $arg) {
         fwrite(STDOUT, "Usage: php bin/poll-glucose-offline.php [--once] [-o FILE]\n");
         fwrite(STDOUT, "Polls LibreLinkUp with LIBRELINK_EMAIL and LIBRELINK_PASSWORD from .env\n");
         fwrite(STDOUT, "and merges readings into a dense 1440-slot CSV the dashboard Import button\n");
-        fwrite(STDOUT, "accepts (mylibre.history.csv). Does not wait for the dashboard login form.\n");
-        fwrite(STDOUT, "Default file: data/mylibre.history.csv\n");
+        fwrite(STDOUT, "accepts (gluchron.history.csv). Does not wait for the dashboard login form.\n");
+        fwrite(STDOUT, "Default file: data/gluchron.history.csv\n");
         exit(0);
     }
     fwrite(STDERR, "Unknown argument: {$arg}\n");

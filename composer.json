@@ -1,18 +1,18 @@
 {
-    "name": "bitbasket/mylibre",
+    "name": "bitbasket/gluchron",
     "description": "One-box self-host LibreLink glucose dashboard",
     "type": "project",
     "license": "MIT",
     "repositories": [
         {
             "type": "vcs",
-            "url": "https://github.com/BitBasket/mycgm-core.git"
+            "url": "https://github.com/BitBasket/gluchron-core.git"
         }
     ],
     "require": {
         "php": "^8.4",
         "ext-json": "*",
-        "bitbasket/mycgm-core": "dev-trunk",
+        "bitbasket/gluchron-core": "dev-trunk",
         "phpexperts/csv-speaker": "^1.4"
     },
     "require-dev": {
