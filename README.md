@@ -11,7 +11,7 @@ Libre 2
   → RESTSpeaker
   → LibreLinkUpProvider
   → GlucoseReadingDTO
-  → SQLite
+  → encrypted buckets
   → public/*.json
   → Vanilla JavaScript PWA
 ```
@@ -33,10 +33,10 @@ This is a display. It does not recommend insulin, invent missing points, or alte
 ## Arch Linux requirements
 
 ```bash
-sudo pacman -S php php-sqlite composer
+sudo pacman -S php composer
 ```
 
-Needed PHP extensions: `json`, `pdo`, `pdo_sqlite`. PHP 8.4 or newer. The app itself stores no SQLite; `pdo_sqlite` is only needed for `php bin/migrate-sqlite.php` (the v1 import tool).
+Needed PHP extensions: `json`, `pdo`. PHP 8.4 or newer. The app stores no SQLite.
 
 ## Install
 
@@ -88,26 +88,13 @@ History now lives in immutable time-bucketed batches under `public/b/`. If you h
 # v2 encrypted store (data/glucose.json.asc) — your current history
 php bin/migrate-history.php
 
-# v1 plaintext SQLite (../data/glucose.sqlite)
-php bin/migrate-sqlite.php ../data/glucose.sqlite
-
 # v2 JSON object array → dense dashboard CSV (import in the UI)
 php bin/upgrade-glucose-data-version.php -o mylibre.history.csv
 ```
 
-`migrate-history` / `migrate-sqlite` decrypt the old store, group readings into buckets, write `public/b/*.json.asc`, record emitted timestamps in `data/poll-state.json`, and refresh `current.json.asc`/`status.json.asc`. Neither modifies the source. Run whichever applies; if your v2 store already contains everything from v1 (it usually does), `migrate-history` alone is enough. Old `public/history-*.json.asc` day files are no longer read and can be deleted.
+`migrate-history` decrypts the old store, groups readings into buckets, writes `public/b/*.json.asc`, records emitted timestamps in `data/poll-state.json`, and refreshes `current.json.asc`/`status.json.asc`. It does not modify the source. Old `public/history-*.json.asc` day files are no longer read and can be deleted.
 
 `upgrade-glucose-data-version.php` reads the same v2 JSON (`data/glucose.json.asc`, or a plaintext export of `{timestamp, glucoseMgDl, …}` objects) and writes the dense 1,440-slot CSV the dashboard stores. It does not write buckets. Import the CSV in the UI (plaintext, or OpenPGP-encrypted with a symmetric passphrase or to the unlocked public key); the browser does not convert old JSON itself.
-
-## Migrate from v1
-
-v1 keeps plaintext SQLite at `data/glucose.sqlite` (this checkout's sibling `../data/` when v2 lives in `MyLibre.v2/`). v2 stores encrypted JSON under its own PGP keys, so copying `glucose.sqlite` or v1's `data/keys/` is not enough.
-
-```bash
-php bin/migrate-sqlite.php ../data/glucose.sqlite
-```
-
-That command snapshots the live SQLite file (including WAL, without stopping v1), imports timestamps that v2 does not already have, and rewrites encrypted history batches under `public/b/`. Run it with the poller stopped. Re-run it whenever v1 has collected more readings. v1 is not modified.
 
 ## Configuration
 
@@ -121,7 +108,6 @@ That command snapshots the live SQLite file (including WAL, without stopping v1)
 | `LIBRELINK_PATIENT_ID` | Optional when more than one connection exists |
 | `LIBRELINK_CLIENT_VERSION` | LibreLinkUp client version header. Bump if Abbott starts returning 403. |
 | `HOST` | Bind address. Default `127.0.0.1`. LAN exposure requires an explicit change. |
-| `SQLITE_PATH` | Optional v1 SQLite file for `php bin/migrate-sqlite.php`. Not used by the poller. |
 | `SESSION_PATH` | Default `data/libre-session.json` (token cache, gitignored, mode 0600) |
 | `DATA_PATH` | Encrypted history store. Default `data/glucose.json.asc`. |
 | `PGP_PUBLIC_KEY_PATH` / `PGP_PRIVATE_KEY_PATH` | Server keypair for the poller's own stores (session cache). Never the recipient of published glucose. |
@@ -184,7 +170,7 @@ In Chrome: Install page as app / Create shortcut → Open as window.
 composer test
 ```
 
-Unit tests cover DTOs, trend mapping, mock readings, and LibreLinkUp login/region/normalization against fixtures, plus the SQLite v1 import path. They do not call live Abbott servers.
+Unit tests cover DTOs, trend mapping, mock readings, and LibreLinkUp login/region/normalization against fixtures. They do not call live Abbott servers.
 
 ## systemd user service
 
@@ -232,6 +218,7 @@ The API is unofficial and can change without notice. Client `product`/`version` 
 
 * **[2026-09-20]** Add the Move to Cloud button: `POST /api/migrate-to-cloud` pushes ciphertext-only history to MyLibre Cloud (`SelfHostFront`, `CloudMigrateClient`, `CLOUD_MIGRATE_URL`).
 * **[2026-09-20]** Add offline analytics tooling: LibreView history fetch/import and insulin-resistance trend scripts.
+* **[2026-09-20]** Remove all SQLite storage and the v1 `migrate-sqlite` tool; the app is snapshot-file only.
 
 #### v4.0.0
 

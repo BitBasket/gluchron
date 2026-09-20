@@ -31,7 +31,7 @@
     "scripts": {
         "test": "phpunit",
         "init-pgp": "php bin/init-pgp.php",
-        "migrate-sqlite": "php bin/migrate-sqlite.php",
+        "migrate-history": "php bin/migrate-history.php",
         "poll": "php bin/poll-glucose.php",
         "serve": "php bin/serve.php",
         "start": "php bin/serve.php",

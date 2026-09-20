@@ -53,7 +53,7 @@ The dashboard generates or imports a keypair in the browser, keeps the private k
 
 ## Persistent state and migrations
 
-The live path uses `data/keys/user-public.asc` (the enrolled recipient), the encrypted session cache `data/libre-session.json.asc`, poll state `data/poll-state.json` (timestamps only), and encrypted files under `public/`. Historical storage formats are supported only as migration sources: `bin/migrate-history.php` and `bin/migrate-sqlite.php` convert them into buckets and refresh exports, while `bin/upgrade-glucose-data-version.php` produces the older dense CSV import format. `bin/poll-glucose-offline.php` polls with `.env` credentials and merges readings into the dashboard-importable dense CSV (`data/mylibre.history.csv` by default) through `CsvHistoryStore`. Run bucket migrations with the poller stopped. `src/Database/` is not constructed by the live poller.
+The live path uses `data/keys/user-public.asc` (the enrolled recipient), the encrypted session cache `data/libre-session.json.asc`, poll state `data/poll-state.json` (timestamps only), and encrypted files under `public/`. Historical storage formats are supported only as migration sources: `bin/migrate-history.php` converts them into buckets and refreshes exports, while `bin/upgrade-glucose-data-version.php` produces the older dense CSV import format. `bin/poll-glucose-offline.php` polls with `.env` credentials and merges readings into the dashboard-importable dense CSV (`data/mylibre.history.csv` by default) through `CsvHistoryStore`. Run bucket migrations with the poller stopped. `src/Database/` contains no SQLite code.
 
 ## Deployment and verification
 
