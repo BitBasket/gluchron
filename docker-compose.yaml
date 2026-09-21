@@ -5,7 +5,8 @@
 #      cp .env.example .env   # fill LibreLinkUp + PGP_PASSPHRASE
 #      # Optional: copy existing data/keys/*.asc and data/*.asc onto the host
 # 3. Point an A/AAAA record at the droplet and set GLUCHRON_SITE to that hostname
-#    in .env (leave GLUCHRON_SITE=:80 to serve HTTP on the droplet IP).
+#    in .env. Unset GLUCHRON_SITE serves HTTP on localhost. Use :80 to serve
+#    HTTP on the droplet IP.
 # 4. docker compose up -d
 #
 # PHP is phpexperts/dockerize's distroless CLI (phpexperts/php:8.4). The poller
@@ -62,7 +63,7 @@ services:
       - "443:443"
       - "443:443/udp"
     environment:
-      GLUCHRON_SITE: ${GLUCHRON_SITE:-:80}
+      GLUCHRON_SITE: ${GLUCHRON_SITE:-http://localhost}
     volumes:
       - ./public:/srv:ro
       # bin/link-pwa.php symlinks the engine PWA into public/ with relative

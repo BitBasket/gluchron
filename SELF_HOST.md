@@ -79,7 +79,10 @@ LIBRELINK_EMAIL=you@example.com
 LIBRELINK_PASSWORD=your-librelinkup-password
 LIBRELINK_REGION=AUTO
 PGP_PASSPHRASE=a-long-passphrase-you-will-keep
-GLUCHRON_SITE=:80
+# laptop: leave unset or http://localhost
+# droplet IP: :80
+# after DNS: glucose.example.com
+GLUCHRON_SITE=http://localhost
 ```
 
 Notes:
@@ -87,6 +90,7 @@ Notes:
 - `LIBRELINK_REGION=AUTO` follows Abbott's JSON region redirect (Egyptian LibreLink EG accounts often land on `ae`). Set `LIBRELINK_BASE_URI` only if discovery is wrong.
 - `LIBRELINK_PATIENT_ID` is needed when the LibreLinkUp account has more than one connection.
 - Do not set `ABBOTT_POLL_SECONDS` below 60. Abbott rate-limits.
+- Leave `GLUCHRON_SITE` unset (or `http://localhost`) on a laptop. Open `http://localhost/` to enroll a key and connect LibreLinkUp.
 - `GLUCHRON_SITE=:80` serves HTTP on the droplet IP. Change it after DNS (next section).
 - Do not commit `.env`.
 
@@ -121,7 +125,7 @@ public/status.json.asc
 public/history-YYYYMMDD.json.asc
 ```
 
-Open `http://<droplet-ip>/` only to confirm Caddy is up. Key enrollment and the LibreLinkUp connect form need HTTPS, so finish DNS (next section) before unlocking with a browser-generated keypair.
+On a laptop, open `http://localhost/`. Key enrollment and the LibreLinkUp connect form work there over HTTP. On a public host, open `http://<droplet-ip>/` only to confirm Caddy is up, then finish DNS (next section) before unlocking with a browser-generated keypair.
 
 ## 4. HTTPS
 

@@ -107,7 +107,7 @@ docker compose ps
 
 site="$(env_value GLUCHRON_SITE)"
 case "$site" in
-    "" | ":80") url="http://localhost/" ;;
+    "" | ":80" | localhost | http://localhost) url="http://localhost/" ;;
     :*) url="http://localhost${site}/" ;;
     http://* | https://*) url="${site%/}/" ;;
     *) url="https://${site}/" ;;
