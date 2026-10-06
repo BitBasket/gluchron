@@ -47,7 +47,7 @@ final class SummaryRangeTimeTest extends TestCase
         $this->assertSame(5, $ranges['in70_140']);
     }
 
-    public function testGapAcross70Or180IsOmitted(): void
+    public function testReadingHoldsUntilTheNextReading(): void
     {
         $t = gmmktime(8, 0, 0, 10, 5, 2026);
         $points = [
@@ -57,12 +57,14 @@ final class SummaryRangeTimeTest extends TestCase
 
         $ranges = rangeClockMinutes($points, 0, 2, $t, $t + (10 * 60));
 
-        $this->assertSame(2, $ranges['classified']);
-        $this->assertSame(1, $ranges['in70_180']);
+        $this->assertSame(11, $ranges['classified']);
+        $this->assertSame(10, $ranges['in70_180']);
+        $this->assertSame(10, $ranges['in70_160']);
+        $this->assertSame(0, $ranges['in70_140']);
         $this->assertSame(1, $ranges['above180']);
     }
 
-    public function testGapFillsOnlyTheRangesBothReadingsShare(): void
+    public function testHeldMinutesUseThePreviousReadingRange(): void
     {
         $t = gmmktime(8, 0, 0, 10, 5, 2026);
         $points = [
@@ -72,14 +74,13 @@ final class SummaryRangeTimeTest extends TestCase
 
         $ranges = rangeClockMinutes($points, 0, 2, $t, $t + (6 * 60));
 
-        // Two readings plus five missing minutes.
         $this->assertSame(7, $ranges['classified']);
         $this->assertSame(7, $ranges['in70_180']);
         $this->assertSame(7, $ranges['in70_160']);
-        $this->assertSame(1, $ranges['in70_140']);
+        $this->assertSame(6, $ranges['in70_140']);
     }
 
-    public function testGapLongerThanTwentyMinutesIsOmitted(): void
+    public function testLongHoleStaysWithThePreviousReading(): void
     {
         $t = gmmktime(8, 0, 0, 10, 5, 2026);
         $points = [
@@ -89,8 +90,8 @@ final class SummaryRangeTimeTest extends TestCase
 
         $ranges = rangeClockMinutes($points, 0, 2, $t, $t + (22 * 60));
 
-        $this->assertSame(2, $ranges['classified']);
-        $this->assertSame(2, $ranges['in70_140']);
+        $this->assertSame(23, $ranges['classified']);
+        $this->assertSame(23, $ranges['in70_140']);
     }
 
     public function testWindowOpeningInsideAGapCountsOnlyMinutesInsideTheWindow(): void
@@ -110,7 +111,7 @@ final class SummaryRangeTimeTest extends TestCase
         $this->assertSame(0, $ranges['above180']);
     }
 
-    public function testVeryHighAndVeryLowGapsNeedBothReadingsInTheTighterBin(): void
+    public function testHeldMinutesKeepThePreviousTighterBin(): void
     {
         $t = gmmktime(8, 0, 0, 10, 5, 2026);
         $high = rangeClockMinutes([
@@ -124,9 +125,9 @@ final class SummaryRangeTimeTest extends TestCase
 
         $this->assertSame(4, $high['classified']);
         $this->assertSame(4, $high['above180']);
-        $this->assertSame(1, $high['above250']);
+        $this->assertSame(3, $high['above250']);
         $this->assertSame(4, $low['classified']);
         $this->assertSame(4, $low['below70']);
-        $this->assertSame(1, $low['below54']);
+        $this->assertSame(3, $low['below54']);
     }
 }

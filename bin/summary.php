@@ -18,8 +18,6 @@ const TIGHT_160 = 160;
 const TARGET_HIGH = 180;
 const VERY_HIGH = 250;
 const VERY_LOW = 54;
-// LibreLink can delay readings for up to a 20-minute reporting window.
-const MAX_GAP_MINUTES = 20;
 const STEADY_TOLERANCE = 10;
 
 function usage(): never
@@ -49,10 +47,8 @@ Each window reports:
   - longest continuous 70-180, 70-160, 70-140, and <=180 streaks
   - best locally stable in-range plateau using a ±10 mg/dL anchor tolerance
 
-Range totals are clock time. A gap of up to 20 minutes counts toward a range
-only when both readings are in that range. A longer gap, or a gap that crosses
-70 or 180, is omitted. Mean, GMI, standard deviation, and CV use stored
-readings only. More than 20 consecutive missing minutes also breaks a streak.
+Range totals are clock time. Each reading holds until the next one, with no
+gap cutoff. Mean, GMI, standard deviation, and CV use stored readings only.
 
 All timestamps are UTC.
 
@@ -122,10 +118,8 @@ function lowerBound(array $points, int $target): int
 /**
  * Clock minutes in each clinical range for [startTs, endTs].
  *
- * Each stored reading counts as one minute. A hole of 1..MAX_GAP_MINUTES
- * between two readings is filled only for ranges that contain both values,
- * so a day boundary does not drop time and a threshold crossing is not
- * assigned to either side. Longer holes stay unclassified.
+ * Each reading holds until the next reading. A reading from before the
+ * window holds from the window start. There is no maximum hole.
  *
  * @param array<int, array{0: int, 1: int}> $points
  * @return array{
@@ -181,81 +175,22 @@ function rangeClockMinutes(array $points, int $from, int $to, int $startTs, int 
         }
     };
 
-    $addAgreedGap = static function (array &$acc, int $left, int $right, int $minutes): void {
-        if ($minutes <= 0) {
-            return;
-        }
-
-        $sameSide = ($left >= LOW && $left <= TARGET_HIGH && $right >= LOW && $right <= TARGET_HIGH)
-            || ($left > TARGET_HIGH && $right > TARGET_HIGH)
-            || ($left < LOW && $right < LOW);
-        if (!$sameSide) {
-            return;
-        }
-
-        $acc['classified'] += $minutes;
-        if ($left >= LOW && $left <= TARGET_HIGH && $right >= LOW && $right <= TARGET_HIGH) {
-            $acc['in70_180'] += $minutes;
-        }
-        if ($left >= LOW && $left <= TIGHT_160 && $right >= LOW && $right <= TIGHT_160) {
-            $acc['in70_160'] += $minutes;
-        }
-        if ($left >= LOW && $left <= TIGHT_140 && $right >= LOW && $right <= TIGHT_140) {
-            $acc['in70_140'] += $minutes;
-        }
-        if ($left > TARGET_HIGH && $right > TARGET_HIGH) {
-            $acc['above180'] += $minutes;
-        }
-        if ($left > VERY_HIGH && $right > VERY_HIGH) {
-            $acc['above250'] += $minutes;
-        }
-        if ($left < LOW && $right < LOW) {
-            $acc['below70'] += $minutes;
-        }
-        if ($left < VERY_LOW && $right < VERY_LOW) {
-            $acc['below54'] += $minutes;
+    $cover = static function (int $value, int $fromTs, int $untilTs) use (&$acc, $addReading, $startTs, $endTs): void {
+        $begin = max($fromTs, $startTs);
+        $end = min($untilTs, $endTs + 60);
+        if ($end > $begin) {
+            $addReading($acc, $value, intdiv($end - $begin, 60));
         }
     };
 
-    $fillBetween = static function (
-        array &$acc,
-        int $leftTs,
-        int $leftV,
-        int $rightTs,
-        int $rightV
-    ) use ($startTs, $endTs, $addAgreedGap): void {
-        $fullGap = intdiv($rightTs - $leftTs, 60) - 1;
-        if ($fullGap <= 0 || $fullGap > MAX_GAP_MINUTES) {
-            return;
-        }
-
-        $first = max($leftTs + 60, $startTs);
-        $last = min($rightTs - 60, $endTs);
-        if ($last < $first) {
-            return;
-        }
-
-        $addAgreedGap($acc, $leftV, $rightV, intdiv($last - $first, 60) + 1);
-    };
-
-    if ($from > 0 && $from < $to) {
-        $fillBetween(
-            $acc,
-            $points[$from - 1][0],
-            $points[$from - 1][1],
-            $points[$from][0],
-            $points[$from][1]
-        );
+    if ($from > 0) {
+        $until = $from < $to ? $points[$from][0] : $endTs + 60;
+        $cover($points[$from - 1][1], $points[$from - 1][0], $until);
     }
 
     for ($i = $from; $i < $to; $i++) {
-        [$ts, $value] = $points[$i];
-        if ($ts >= $startTs && $ts <= $endTs) {
-            $addReading($acc, $value, 1);
-        }
-        if ($i + 1 < $to) {
-            $fillBetween($acc, $ts, $value, $points[$i + 1][0], $points[$i + 1][1]);
-        }
+        $until = $i + 1 < $to ? $points[$i + 1][0] : $endTs + 60;
+        $cover($points[$i][1], $points[$i][0], $until);
     }
 
     return $acc;
@@ -315,7 +250,7 @@ function updateStreak(array &$state, int $ts, int $value, bool $matches): void
 
 /**
  * Compute all threshold streaks in one pass over observed readings.
- * A gap > MAX_GAP_MINUTES breaks all streaks.
+ * A streak breaks only when a reading leaves the range.
  */
 function thresholdStreaks(array $points, int $from, int $to): array
 {
@@ -326,27 +261,13 @@ function thresholdStreaks(array $points, int $from, int $to): array
         '<=180' => makeStreakState(),
     ];
 
-    $lastTs = null;
-
     for ($i = $from; $i < $to; $i++) {
         [$ts, $v] = $points[$i];
-
-        if ($lastTs !== null) {
-            $missing = intdiv($ts - $lastTs, 60) - 1;
-            if ($missing > MAX_GAP_MINUTES) {
-                foreach ($states as &$state) {
-                    finishStreak($state);
-                }
-                unset($state);
-            }
-        }
 
         updateStreak($states['70-180'], $ts, $v, $v >= 70 && $v <= 180);
         updateStreak($states['70-160'], $ts, $v, $v >= 70 && $v <= 160);
         updateStreak($states['70-140'], $ts, $v, $v >= 70 && $v <= 140);
         updateStreak($states['<=180'], $ts, $v, $v <= 180);
-
-        $lastTs = $ts;
     }
 
     foreach ($states as &$state) {
@@ -368,7 +289,6 @@ function thresholdStreaks(array $points, int $from, int $to): array
  * A window is valid when:
  *   - all readings are 70..180
  *   - every reading remains within ±$tolerance of the FIRST reading
- *   - no missing run exceeds $maxGap minutes
  *
  * This preserves the anchor semantics of find-steady-states.php without
  * the O(n²) nested scan.
@@ -377,8 +297,7 @@ function bestSteadyInRange(
     array $points,
     int $from,
     int $to,
-    int $tolerance = STEADY_TOLERANCE,
-    int $maxGap = MAX_GAP_MINUTES
+    int $tolerance = STEADY_TOLERANCE
 ): ?array {
     $best = null;
     $left = $from;
@@ -399,14 +318,6 @@ function bestSteadyInRange(
 
     for ($right = $from; $right < $to; $right++) {
         [$ts, $v] = $points[$right];
-
-        if ($right > $from) {
-            $previousTs = $points[$right - 1][0];
-            $missing = intdiv($ts - $previousTs, 60) - 1;
-            if ($missing > $maxGap) {
-                $reset($right);
-            }
-        }
 
         if ($v < LOW || $v > TARGET_HIGH) {
             $reset($right + 1);
@@ -590,7 +501,6 @@ echo "Source:        {$file}\n";
 echo "First reading: " . fmtTs($firstObserved) . " UTC\n";
 echo "Last reading:  " . fmtTs($lastObserved) . " UTC\n";
 echo "Elapsed span:  " . fmtDuration($totalSpanMinutes) . "\n";
-echo "Gap rule:      <=" . MAX_GAP_MINUTES . " missing minutes count when both readings share the range; longer gaps are omitted\n";
 echo "\n";
 
 foreach ($windows as [$label, $days]) {
