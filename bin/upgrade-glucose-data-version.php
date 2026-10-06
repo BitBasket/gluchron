@@ -15,7 +15,7 @@ $root = dirname(__DIR__);
 
 if (!is_file($source)) {
     fwrite(STDERR, "No v2 JSON history store found at {$source}.\n");
-    fwrite(STDERR, "Usage: php bin/upgrade-glucose-data-version.php [data/glucose.json.asc|history.json] [-o mylibre.history.csv]\n");
+    fwrite(STDERR, "Usage: php bin/upgrade-glucose-data-version.php [data/glucose.json.asc|history.json] [-o gluchron.history.csv]\n");
     exit(1);
 }
 

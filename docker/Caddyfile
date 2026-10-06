@@ -2,7 +2,7 @@
 	admin off
 }
 
-{$MYLIBRE_SITE::80} {
+{$GLUCHRON_SITE:http://localhost} {
 	root * /srv
 	encode gzip zstd
 

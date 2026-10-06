@@ -1,6 +1,25 @@
+## v5.0.0
+
+* **[2026-10-06 12:13:45 EEST]** Removed the 20-minute gap cutoff from range time.
+* **[2026-10-06 12:11:26 EEST]** Counted range totals as clock time, filling gaps of up to 20 minutes.
+* **[2026-10-06 12:00:07 EEST]** Reported CGM coverage and range totals as hours and minutes.
+* **[2026-09-21 17:23:10 EEST]** Defaulted unset GLUCHRON_SITE to http://localhost for local Docker.
+* **[2026-09-20 14:50:13 EEST]** Replaced the custom Debian PHP poller image with phpexperts/dockerize.
+* **[2026-09-20 14:18:12 EEST]** Renamed the self-host app to My GluChron.
+* **[2026-09-20 07:46:38 EEST]** Removed all SQLite storage and the v1 migrate-sqlite tool.
+* **[2026-09-20 07:39:20 EEST]** [m] Updated the README.
+* **[2026-09-16 23:16:08 EEST]** Add a wrapper that runs clinical CGM streak reports.
+* **[2026-09-16 22:37:34 EEST]** Add a CLI to find glucose threshold streaks.
+* **[2026-09-16 21:11:56 EEST]** Add a CLI to find steady-state glucose streaks.
+* **[2026-09-16 20:51:45 EEST]** Add phpexperts/csv-speaker for CGM CSV analysis.
+
+## v4.2.0
+
+* **[2026-09-20]** Replaced the custom `php:8.4-cli-bookworm` poller image with `phpexperts/dockerize` distroless PHP CLI (`phpexperts/php:8.4`) plus GnuPG. Caddy remains the public TLS front.
+
 ## v4.0.0
 
-* **[2026-09-16 03:17:00 EEST]** Extracted the engine and PWA into path-required bitbasket/mycgm-core.
+* **[2026-09-16 03:17:00 EEST]** Extracted the engine and PWA into path-required bitbasket/gluchron-core.
 * **[2026-09-14 11:19:59 EEST]** Make the self-host app single-tenant again: one dashboard at /
 * **[2026-09-14 08:04:46 EEST]** Encrypt published snapshots only to the enrolled user public key.
 * **[2026-09-14 07:19:43 EEST]** Rewrite ARCHITECTURE.md as a whole-system overview.

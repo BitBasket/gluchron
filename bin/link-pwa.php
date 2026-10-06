@@ -4,10 +4,10 @@
 declare(strict_types=1);
 
 $root = dirname(__DIR__);
-$pwa = $root . '/vendor/bitbasket/mycgm-core/pwa';
+$pwa = $root . '/vendor/bitbasket/gluchron-core/pwa';
 $public = $root . '/public';
 if (!is_dir($pwa)) {
-    fwrite(STDERR, "mycgm-core pwa is missing at {$pwa}\n");
+    fwrite(STDERR, "gluchron-core pwa is missing at {$pwa}\n");
     exit(1);
 }
 if (!is_dir($public) && !mkdir($public, 0755, true) && !is_dir($public)) {
@@ -16,7 +16,7 @@ if (!is_dir($public) && !mkdir($public, 0755, true) && !is_dir($public)) {
 }
 
 $keep = ['index.php', 'router.php', 'signup.html'];
-$relative = '../vendor/bitbasket/mycgm-core/pwa';
+$relative = '../vendor/bitbasket/gluchron-core/pwa';
 foreach (scandir($pwa) ?: [] as $name) {
     if ($name === '.' || $name === '..' || in_array($name, $keep, true)) {
         continue;

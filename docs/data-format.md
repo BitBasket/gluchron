@@ -6,8 +6,8 @@ There are three places that shape appears:
 
 | Place | What it is | Format |
 | --- | --- | --- |
-| Browser site data | Durable history on the device | One CSV in `localStorage` key `mylibre.h.csv` |
-| `mylibre.history.csv` | Portable export / import | Same CSV as the device store |
+| Browser site data | Durable history on the device | One CSV in `localStorage` key `gluchron.h.csv` |
+| `gluchron.history.csv` | Portable export / import | Same CSV as the device store |
 | `public/b/<bucket>.json.asc` | Encrypted relay batch | JSON `{ schemaVersion, bucket, readings }` after decrypt |
 
 The live dashboard value is a fourth, smaller object (`current.json.asc`). It is **not** history.
@@ -63,21 +63,21 @@ Rules:
 - The day id is `toISOString().slice(0, 10)` with hyphens stripped.
 - A full day of values is ~6 KB; a sparse day is smaller in digits but still 1,440 commas.
 
-`localStorage` key: **`mylibre.h.csv`**. Other keys:
+`localStorage` key: **`gluchron.h.csv`**. Other keys:
 
 | Key | Value |
 | --- | --- |
-| `mylibre.h.csv` | The CSV above |
-| `mylibre.current` | Latest reading for offline display (see §5) |
-| `mylibre.bucket` / `mylibre.bucketSeconds` | Sync checkpoint, not glucose |
+| `gluchron.h.csv` | The CSV above |
+| `gluchron.current` | Latest reading for offline display (see §5) |
+| `gluchron.bucket` / `gluchron.bucketSeconds` | Sync checkpoint, not glucose |
 
 `localStorage.setItem` replaces the whole value, so a quiet dashboard poll does **not** write. A new minute rewrites the CSV; closed days are kept as a string prefix so only the last line is rebuilt.
 
-The in-memory series is the live copy. `mylibre.h.csv` is the durable cache of that series.
+The in-memory series is the live copy. `gluchron.h.csv` is the durable cache of that series.
 
 ---
 
-## 3. Portable export (`mylibre.history.csv`)
+## 3. Portable export (`gluchron.history.csv`)
 
 Export downloads the same CSV as §2. That file is the portable backup.
 
@@ -85,19 +85,19 @@ Export downloads the same CSV as §2. That file is the portable backup.
 
 ## 4. Import
 
-Import merges by UTC minute (later value wins) and rewrites `mylibre.h.csv`. The dashboard accepts the dense CSV in §2 as:
+Import merges by UTC minute (later value wins) and rewrites `gluchron.h.csv`. The dashboard accepts the dense CSV in §2 as:
 
 - plaintext (`.csv`)
 - OpenPGP **symmetric** ciphertext (`gpg --symmetric`, password) — armored `.asc` or binary `.gpg`
 - OpenPGP **public-key** ciphertext (`gpg --encrypt --recipient`, encrypted to the unlocked keypair)
 
-The browser inspects the message packets (SKESK vs PKESK) to choose password decrypt or the unlocked private key. It does not convert JSON, sparse CSV, or the old `mylibre.history` localStorage key.
+The browser inspects the message packets (SKESK vs PKESK) to choose password decrypt or the unlocked private key. It does not convert JSON, sparse CSV, or the old `gluchron.history` localStorage key.
 
 Convert the v2 JSON object store (the payload `bin/migrate-history.php` reads from `data/glucose.json.asc`, or a plaintext export of the same `{timestamp, glucoseMgDl, …}` objects) with:
 
 ```bash
-php bin/upgrade-glucose-data-version.php -o mylibre.history.csv
-php bin/upgrade-glucose-data-version.php path/to/history.json -o mylibre.history.csv
+php bin/upgrade-glucose-data-version.php -o gluchron.history.csv
+php bin/upgrade-glucose-data-version.php path/to/history.json -o gluchron.history.csv
 ```
 
 Then use the dashboard Import button. The file may be plaintext or OpenPGP-encrypted as above.
@@ -106,7 +106,7 @@ Then use the dashboard Import button. The file may be plaintext or OpenPGP-encry
 
 ## 5. Live current reading (not history)
 
-`public/current.json.asc` (and the tiny `mylibre.current` cache) is the dashboard card: last value, trend, timestamp. Age and stale flags are **not** stored; the browser derives them.
+`public/current.json.asc` (and the tiny `gluchron.current` cache) is the dashboard card: last value, trend, timestamp. Age and stale flags are **not** stored; the browser derives them.
 
 ```json
 {

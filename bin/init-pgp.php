@@ -73,7 +73,6 @@ echo "Private key: {$config->privateKeyPath}\n";
 if ($wrotePassphrase) {
     echo "PGP_PASSPHRASE was written to .env (not printed here).\n";
 }
-echo "Import v1 SQLite history with: php bin/migrate-sqlite.php\n";
 echo "Unlock the dashboard with your keypair and passphrase.\n";
 
 function askForPassphrase(PassphrasePrompt $prompt, bool $keysExist): string

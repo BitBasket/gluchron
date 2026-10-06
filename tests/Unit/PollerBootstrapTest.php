@@ -87,7 +87,7 @@ final class PollerBootstrapTest extends TestCase
             'APP_ENV' => 'test',
             'GLUCOSE_PROVIDER' => 'mock',
             'AUTH_LISTEN' => '',
-            'PGP_USER_PUBLIC_KEY_PATH' => sys_get_temp_dir() . '/mylibre-missing-user-key-' . uniqid('', true) . '.asc',
+            'PGP_USER_PUBLIC_KEY_PATH' => sys_get_temp_dir() . '/gluchron-missing-user-key-' . uniqid('', true) . '.asc',
         ];
     }
 }

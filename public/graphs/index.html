@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#07131a">
+  <title>30-day glucose change — GluChron</title>
+  <style>
+    :root {
+      --bg: #07131a;
+      --panel: #10222c;
+      --ink: #e8f4f2;
+      --muted: #8aa4ad;
+      --fresh: #3ddc97;
+      --line: #1d3a46;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background: radial-gradient(circle at top, #123040, var(--bg) 55%);
+      color: var(--ink);
+      font-family: "Segoe UI", system-ui, sans-serif;
+    }
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2rem 1.25rem 3rem;
+    }
+    h1 {
+      margin: 0;
+      font-size: 1.1rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .lede {
+      color: var(--muted);
+      max-width: 46rem;
+      line-height: 1.5;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 0.75rem;
+      margin: 1.25rem 0 0.5rem;
+    }
+    .stat {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 0.85rem 1rem;
+    }
+    .stat b {
+      display: block;
+      font-size: 1.35rem;
+      color: var(--fresh);
+      letter-spacing: 0.02em;
+    }
+    .stat span { color: var(--muted); font-size: 0.85rem; }
+    figure {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 1rem;
+      margin: 1.35rem 0;
+    }
+    img {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 8px;
+    }
+    figcaption {
+      margin-top: 0.8rem;
+      color: var(--muted);
+      font-size: 0.95rem;
+      line-height: 1.45;
+    }
+    figcaption strong {
+      display: block;
+      color: var(--ink);
+      margin-bottom: 0.25rem;
+    }
+    a { color: var(--fresh); }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>My GluChron</h1>
+    <p class="lede">
+      19 August through 21 September 2026. Dense minute-grid from
+      <code>glucose.csv</code>, local days UTC+3, no glucose-lowering medication.
+      Daily bars use UTC calendar days from the dense CSV. Overnight medians
+      use 02:00–06:00 local (UTC+3). Early days are LibreLink historic samples;
+      live 1-minute GluChron begins around 2 September.
+    </p>
+    <div class="stats">
+      <div class="stat"><b>310 → 136</b><span>daily mean, mg/dL</span></div>
+      <div class="stat"><b>10.7% → 6.6%</b><span>GMI from mean glucose</span></div>
+      <div class="stat"><b>0% → 75%</b><span>time in 70–180</span></div>
+      <div class="stat"><b>113 hours</b><span>longest streak &gt;180, 21–25 Aug</span></div>
+    </div>
+    
+    <figure>
+      <img src="00-thirty-day-change.svg" alt="The 30-day change">
+      <figcaption>
+        <strong>The 30-day change</strong>
+        Daily mean and overnight median on top; stacked time-in-range below. GMI uses 3.31 + 0.02392 × mean.
+      </figcaption>
+    </figure>
+    <figure>
+      <img src="01-daily-mean-overnight.svg" alt="Daily mean, median, and overnight floor">
+      <figcaption>
+        <strong>Daily mean, median, and overnight floor</strong>
+        The overnight median fell faster than the 24-hour mean. 11 Sep is the last fully hyperglycemic day; 19–20 Sep are the first lows.
+      </figcaption>
+    </figure>
+    <figure>
+      <img src="02-time-in-range.svg" alt="Time in range by day">
+      <figcaption>
+        <strong>Time in range by day</strong>
+        Orange is time above 250, yellow 181–250, green 70–180, dark red below 70. Green takes over after 16 Sep; red appears only on 19–20 Sep.
+      </figcaption>
+    </figure>
+    <figure>
+      <img src="03-glucose-trace.svg" alt="Five-minute overview trace">
+      <figcaption>
+        <strong>Five-minute overview trace</strong>
+        The shaded August band is the 113-hour stretch continuously above 180, peak 433. Color follows the same 70 / 180 / 250 bands.
+      </figcaption>
+    </figure>
+    <figure>
+      <img src="04-early-vs-recent-clock.svg" alt="Clock-day early versus recent">
+      <figcaption>
+        <strong>Clock-day early versus recent</strong>
+        Hour-of-day median and IQR for 19–25 Aug versus 16–21 Sep. The whole circadian floor dropped; the overnight hours dropped furthest.
+      </figcaption>
+    </figure>
+    <p class="lede">PNG copies sit next to each SVG. Regenerate with
+      <code>bin/render-trend-graphs.py</code>.</p>
+  </main>
+</body>
+</html>

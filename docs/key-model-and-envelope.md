@@ -31,7 +31,7 @@ Supporting requirements:
 | Passphrase | `.env` (`PGP_PASSPHRASE`), written by `init-pgp.php` | Unlocks the private key; stored in plaintext in `.env`. |
 | Encrypt + sign | `src/Security/PgpCrypto.php::encrypt()` | `--local-user $fingerprint --sign` **and** `--recipient $fingerprint`. Signs with the **private** key and encrypts to the same user key. |
 | Snapshot write | `src/Export/DashboardSnapshot.php` | Encrypts each snapshot (`current.json.asc`, `history-YYYYMMDD.json.asc`, `status.json.asc`) into `public/`, overwriting in place. |
-| Decrypt | `public/pgp.js` (OpenPGP.js) | Stores the **same** keypair in IndexedDB (`mylibre-pgp`), decrypts and verifies in-page. |
+| Decrypt | `public/pgp.js` (OpenPGP.js) | Stores the **same** keypair in IndexedDB (`gluchron-pgp`), decrypts and verifies in-page. |
 
 The private key and its passphrase therefore live on the same host that logs into LibreLinkUp, and `init-pgp.php` explicitly instructs the user to copy `private.asc` into the browser. This satisfies "ciphertext at rest, plaintext only in the browser," but **not** the plan's key-ownership model.
 
@@ -41,7 +41,7 @@ Generation moves to the device. The worker receives the public key only and neve
 
 The hard consequence: **the worker can no longer sign with the user's key.** Today authenticity comes from sign+encrypt with the private key that lives on the poller. Once the worker holds only the public key, that is impossible. Integrity must instead come from the encryption scheme's own authentication (OpenPGP MDC, or an AEAD tag such as ChaCha20-Poly1305 / AES-GCM): tampering yields a **decryption failure**, not a forged-but-valid reading.
 
-If non-repudiation of worker output is ever required, add a separate **MyLibre signing key** (its own keypair, pinned on the device). It is not needed for integrity, and it must **not** be the user's key.
+If non-repudiation of worker output is ever required, add a separate **GluChron signing key** (its own keypair, pinned on the device). It is not needed for integrity, and it must **not** be the user's key.
 
 ### 1.4 The crypto primitive is swappable — do not block on it
 
@@ -96,7 +96,7 @@ The unit the worker emits and the browser commits. It carries enough to deduplic
 
 ```json
 {
-  "schema": "mylibre.cgm.batch",
+  "schema": "gluchron.cgm.batch",
   "schemaVersion": 1,
   "adapter": { "name": "librelinkup", "schemaVersion": 1 },
   "producedAt": "2026-09-12T09:48:00Z",
@@ -166,7 +166,7 @@ The dashboard is pure static HTML + JS + CSS with **no request-time backend**, s
 
 ## 5. Open questions
 
-1. Sign worker output with a separate MyLibre key, or rely purely on the encryption's integrity tag?
+1. Sign worker output with a separate GluChron key, or rely purely on the encryption's integrity tag?
 2. Batch composition: whole overlapping graph per poll, or only newly observed readings?
 3. **Enrollment transport (self-host, done):** `POST /api/keys` over HTTPS (or loopback) writes `data/keys/user-public.asc`. First fingerprint wins; a different key is a 409, and the private key is refused. Enrollment is not scoped: there is no per-deployment URL prefix and no unscoped-vs-scoped distinction — `/api/keys` is simply the one endpoint. Here HTTPS (or loopback) is what keeps a network attacker from enrolling a substitute key.
 4. Which expiry mechanism per provider: object-storage lifecycle rule vs. deletion worker?

@@ -1,8 +1,8 @@
-# MyLibre Glucose Dashboard
+# My GluChron
 
 A local-first Progressive Web App that shows FreeStyle Libre 2 glucose readings on a Linux laptop.
 
-The official LibreLink EG Android app remains the Bluetooth receiver. This project never talks to the sensor over BLE. It only reads the unofficial LibreLinkUp HTTP API, stores measurements in SQLite, and writes a static JSON snapshot for a localhost dashboard.
+The official LibreLink EG Android app remains the Bluetooth receiver. This project never talks to the sensor over BLE. It only reads the unofficial LibreLinkUp HTTP API, stores measurements as encrypted time-bucketed JSON snapshots, and writes a static JSON snapshot for a localhost dashboard.
 
 ```text
 Libre 2
@@ -11,14 +11,14 @@ Libre 2
   → RESTSpeaker
   → LibreLinkUpProvider
   → GlucoseReadingDTO
-  → SQLite
+  → encrypted buckets
   → public/*.json
   → Vanilla JavaScript PWA
 ```
 
 ## Architecture
 
-Abbott-specific URLs, headers, region names, account IDs, and JSON field names stay inside `bitbasket/mycgm-core` (`src/LibreLink/`). This app requires that Composer library (resolved from `https://github.com/BitBasket/mycgm-core.git`). The rest of the app only sees `GlucoseReadingDTO` values from `phpexperts/simple-dto`.
+Abbott-specific URLs, headers, region names, account IDs, and JSON field names stay inside `bitbasket/gluchron-core` (`src/LibreLink/`). This app requires that Composer library (resolved from `https://github.com/BitBasket/gluchron-core.git`). The rest of the app only sees `GlucoseReadingDTO` values from `phpexperts/simple-dto`.
 
 `phpexperts/rest-speaker` is the only HTTP client used against Abbott. Login uses `RESTSpeaker` + `NoAuth`. Authenticated calls use `LibreLinkUpAuth`, a custom `RESTAuth` strategy that injects the Bearer token, SHA-256 `Account-Id`, product, and client version. RESTSpeaker is not passed into repositories or DTOs.
 
@@ -32,23 +32,32 @@ This is a display. It does not recommend insulin, invent missing points, or alte
 
 ## Arch Linux requirements
 
+Native PHP is optional. The Docker poller uses `phpexperts/dockerize` (`phpexperts/php:8.4`). To get `vendor/bin/php` and `vendor/bin/composer` without installing PHP on the host:
+
 ```bash
-sudo pacman -S php php-sqlite composer
+bash <(curl -s 'https://raw.githubusercontent.com/PHPExpertsInc/dockerize/v15.x/dockerize.sh')
 ```
 
-Needed PHP extensions: `json`, `pdo`, `pdo_sqlite`. PHP 8.4 or newer.
+If you would rather run PHP on the host:
+
+```bash
+sudo pacman -S php composer
+```
+
+Needed PHP extensions: `json`, `pdo`. PHP 8.4 or newer. The app stores no SQLite.
 
 ## Install
 
 ```bash
-git clone <this-repo> MyLibre
-cd MyLibre
+git clone <this-repo> GluChron
+cd GluChron
+bash <(curl -s 'https://raw.githubusercontent.com/PHPExpertsInc/dockerize/v15.x/dockerize.sh')
 composer install
 cp .env.example .env
 php bin/init-pgp.php
 ```
 
-`composer install` pulls the engine library `bitbasket/mycgm-core` (`dev-trunk`) from `https://github.com/BitBasket/mycgm-core.git` via Composer. Do not copy the engine `src/` or `pwa/` into this tree.
+`composer install` pulls the engine library `bitbasket/gluchron-core` (`dev-trunk`) from `https://github.com/BitBasket/gluchron-core.git` via Composer. Do not copy the engine `src/` or `pwa/` into this tree.
 
 Credentials belong only in `.env`. That file is gitignored.
 
@@ -88,26 +97,13 @@ History now lives in immutable time-bucketed batches under `public/b/`. If you h
 # v2 encrypted store (data/glucose.json.asc) — your current history
 php bin/migrate-history.php
 
-# v1 plaintext SQLite (../data/glucose.sqlite)
-php bin/migrate-sqlite.php ../data/glucose.sqlite
-
 # v2 JSON object array → dense dashboard CSV (import in the UI)
-php bin/upgrade-glucose-data-version.php -o mylibre.history.csv
+php bin/upgrade-glucose-data-version.php -o gluchron.history.csv
 ```
 
-`migrate-history` / `migrate-sqlite` decrypt the old store, group readings into buckets, write `public/b/*.json.asc`, record emitted timestamps in `data/poll-state.json`, and refresh `current.json.asc`/`status.json.asc`. Neither modifies the source. Run whichever applies; if your v2 store already contains everything from v1 (it usually does), `migrate-history` alone is enough. Old `public/history-*.json.asc` day files are no longer read and can be deleted.
+`migrate-history` decrypts the old store, groups readings into buckets, writes `public/b/*.json.asc`, records emitted timestamps in `data/poll-state.json`, and refreshes `current.json.asc`/`status.json.asc`. It does not modify the source. Old `public/history-*.json.asc` day files are no longer read and can be deleted.
 
 `upgrade-glucose-data-version.php` reads the same v2 JSON (`data/glucose.json.asc`, or a plaintext export of `{timestamp, glucoseMgDl, …}` objects) and writes the dense 1,440-slot CSV the dashboard stores. It does not write buckets. Import the CSV in the UI (plaintext, or OpenPGP-encrypted with a symmetric passphrase or to the unlocked public key); the browser does not convert old JSON itself.
-
-## Migrate from v1
-
-v1 keeps plaintext SQLite at `data/glucose.sqlite` (this checkout's sibling `../data/` when v2 lives in `MyLibre.v2/`). v2 stores encrypted JSON under its own PGP keys, so copying `glucose.sqlite` or v1's `data/keys/` is not enough.
-
-```bash
-php bin/migrate-sqlite.php ../data/glucose.sqlite
-```
-
-That command snapshots the live SQLite file (including WAL, without stopping v1), imports timestamps that v2 does not already have, and rewrites encrypted history batches under `public/b/`. Run it with the poller stopped. Re-run it whenever v1 has collected more readings. v1 is not modified.
 
 ## Configuration
 
@@ -121,7 +117,6 @@ That command snapshots the live SQLite file (including WAL, without stopping v1)
 | `LIBRELINK_PATIENT_ID` | Optional when more than one connection exists |
 | `LIBRELINK_CLIENT_VERSION` | LibreLinkUp client version header. Bump if Abbott starts returning 403. |
 | `HOST` | Bind address. Default `127.0.0.1`. LAN exposure requires an explicit change. |
-| `SQLITE_PATH` | Optional v1 SQLite file for `php bin/migrate-sqlite.php`. Not used by the poller. |
 | `SESSION_PATH` | Default `data/libre-session.json` (token cache, gitignored, mode 0600) |
 | `DATA_PATH` | Encrypted history store. Default `data/glucose.json.asc`. |
 | `PGP_PUBLIC_KEY_PATH` / `PGP_PRIVATE_KEY_PATH` | Server keypair for the poller's own stores (session cache). Never the recipient of published glucose. |
@@ -131,6 +126,24 @@ That command snapshots the live SQLite file (including WAL, without stopping v1)
 | `BROWSER_POLL_SECONDS` | Dashboard poll interval, default 5 |
 | `BUCKET_SECONDS` | History batch size in seconds, default 300 |
 | `POLL_STATE_PATH` | Emitted-timestamp set. Default `data/poll-state.json` (plaintext, numbers only) |
+| `CLOUD_MIGRATE_URL` | Hosted GluChron Cloud origin for the dashboard "Move to Cloud" button. Default empty (the endpoint then returns 503). The private key is never sent. |
+
+## Move to Cloud
+
+An unlocked dashboard can copy its encrypted history to the hosted GluChron Cloud relay. Pressing **Move to Cloud** POSTs to `POST /api/migrate-to-cloud` on the self-host origin (same HTTPS/loopback rule as `/api/keys`). The server then sends **ciphertext only** — the enrolled user public key, the existing `public/*.json.asc` snapshots, and `data/poll-state.json` timestamps — to `{CLOUD_MIGRATE_URL}/api/self-host-migrate`, bucket uploads chunked 200 at a time. Cloud creates a tenant and returns its `/t/<id>/` capability URL.
+
+It never reads `private.asc`, never sends the passphrase, the LibreLink password, or the encrypted Abbott session (that session is encrypted to the self-host server key and is useless on Cloud). Cloud stores the snapshots as-is; it cannot decrypt them. After migrating, unlock the Cloud URL with the same downloaded key files and connect LibreLink there.
+
+Leave `CLOUD_MIGRATE_URL` empty to disable the feature.
+
+## Analytics tooling
+
+Untracked helper scripts for offline analysis of LibreView exports (not part of the dashboard):
+
+- `bin/fetch-historical-data.php` — pulls historical glucose from the LibreView interface (LibreLinkUp only exposes a ~12-hour graph). Keeps the raw response for inspection.
+- `bin/import-historical-data.php` — converts a LibreLink CSV export into a per-day 1,440-minute-column CSV; food/notes rows go to `food-log.csv`.
+- `bin/insulin-resistance-trend.sh` — compares the first and last halves of a CGM export. See `INSULIN-RESISTANCE-TREND.md` and `ANALYTICS-README.md`.
+- `bin/analyze-glucose.sh` — daily clinical range / threshold streak report (requires `bin/find-threshold-streaks.php`, not yet committed).
 
 ## LibreLink EG / Egypt
 
@@ -140,7 +153,7 @@ Egyptian LibreLink EG accounts are expected to land on whatever regional backend
 
 ## Mock provider
 
-Leave `GLUCOSE_PROVIDER=mock` to develop the dashboard without hitting Abbott. The mock still returns real `GlucoseReadingDTO` instances. The poller writes them to SQLite and the dashboard JSON files. The PWA never calls Abbott.
+Leave `GLUCOSE_PROVIDER=mock` to develop the dashboard without hitting Abbott. The mock still returns real `GlucoseReadingDTO` instances. The poller writes them to the encrypted snapshot files exactly as it does real readings. The PWA never calls Abbott.
 
 ## Run
 
@@ -166,14 +179,14 @@ In Chrome: Install page as app / Create shortcut → Open as window.
 composer test
 ```
 
-Unit tests cover DTOs, trend mapping, SQLite deduplication, mock readings, and LibreLinkUp login/region/normalization against fixtures. They do not call live Abbott servers.
+Unit tests cover DTOs, trend mapping, mock readings, and LibreLinkUp login/region/normalization against fixtures. They do not call live Abbott servers.
 
 ## systemd user service
 
 ```bash
 mkdir -p ~/.config/systemd/user
 cp systemd/libre-glucose.service ~/.config/systemd/user/
-# edit WorkingDirectory and ExecStart if this clone is not /code/MyLibre
+# edit WorkingDirectory and ExecStart if this clone is not /code/GluChron
 systemctl --user daemon-reload
 systemctl --user enable --now libre-glucose.service
 journalctl --user -u libre-glucose -f
@@ -210,9 +223,34 @@ The API is unofficial and can change without notice. Client `product`/`version` 
 
 ## Recent Changes
 
+#### v5.0.0
+
+* **[2026-10-06 12:13:45 EEST]** Removed the 20-minute gap cutoff from range time.
+* **[2026-10-06 12:11:26 EEST]** Counted range totals as clock time, filling gaps of up to 20 minutes.
+* **[2026-10-06 12:00:07 EEST]** Reported CGM coverage and range totals as hours and minutes.
+* **[2026-09-21 17:23:10 EEST]** Defaulted unset GLUCHRON_SITE to http://localhost for local Docker.
+* **[2026-09-20 14:50:13 EEST]** Replaced the custom Debian PHP poller image with phpexperts/dockerize.
+* **[2026-09-20 14:18:12 EEST]** Renamed the self-host app to My GluChron.
+* **[2026-09-20 07:46:38 EEST]** Removed all SQLite storage and the v1 migrate-sqlite tool.
+* **[2026-09-20 07:39:20 EEST]** [m] Updated the README.
+* **[2026-09-16 23:16:08 EEST]** Add a wrapper that runs clinical CGM streak reports.
+* **[2026-09-16 22:37:34 EEST]** Add a CLI to find glucose threshold streaks.
+* **[2026-09-16 21:11:56 EEST]** Add a CLI to find steady-state glucose streaks.
+* **[2026-09-16 20:51:45 EEST]** Add phpexperts/csv-speaker for CGM CSV analysis.
+
+#### v4.2.0
+
+* **[2026-09-20]** Replace the custom Debian PHP poller image with `phpexperts/dockerize` distroless PHP CLI. Caddy stays in front for Let's Encrypt.
+
+#### v4.1.0
+
+* **[2026-09-20]** Add the Move to Cloud button: `POST /api/migrate-to-cloud` pushes ciphertext-only history to GluChron Cloud (`SelfHostFront`, `CloudMigrateClient`, `CLOUD_MIGRATE_URL`).
+* **[2026-09-20]** Add offline analytics tooling: LibreView history fetch/import and insulin-resistance trend scripts.
+* **[2026-09-20]** Remove all SQLite storage and the v1 `migrate-sqlite` tool; the app is snapshot-file only.
+
 #### v4.0.0
 
-* **[2026-09-16 03:17:00 EEST]** Extracted the engine and PWA into path-required bitbasket/mycgm-core.
+* **[2026-09-16 03:17:00 EEST]** Extracted the engine and PWA into path-required bitbasket/gluchron-core.
 * **[2026-09-14 11:19:59 EEST]** Make the self-host app single-tenant again: one dashboard at /
 * **[2026-09-14 07:19:43 EEST]** Rewrite ARCHITECTURE.md as a whole-system overview.
 * **[2026-09-14 08:04:46 EEST]** Encrypt published snapshots only to the enrolled user public key.

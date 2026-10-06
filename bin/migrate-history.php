@@ -15,7 +15,6 @@ $config = $app->config;
 $store = $config->dataPath;
 if (!is_file($store)) {
     fwrite(STDERR, "No v2 encrypted history store found at {$store}.\n");
-    fwrite(STDERR, "If your history only exists in v1 SQLite, run: php bin/migrate-sqlite.php\n");
     exit(1);
 }
 

@@ -2,8 +2,6 @@
 /.env
 /data/*.json
 /data/*.csv
-/data/*.sqlite
-/data/*.sqlite-*
 /data/keys/
 /data/*.asc
 /public/*.asc
@@ -15,12 +13,12 @@
 /public/history.json
 /public/history-*.json
 # Plaintext history exports / legacy inputs (PHI). .dockerignore lists these too.
-/mylibre.history.json
+/gluchron.history.json
 /history.json
 /coverage/
 /.phpunit.cache
 /phpunit.result.cache
-# Engine PWA is linked from vendor/bitbasket/mycgm-core/pwa by bin/link-pwa.php
+# Engine PWA is linked from vendor/bitbasket/gluchron-core/pwa by bin/link-pwa.php
 /public/app.js
 /public/app.css
 /public/pgp.js
