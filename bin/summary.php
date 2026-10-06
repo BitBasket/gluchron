@@ -44,13 +44,15 @@ Each window reports:
   - estimated GMI
   - standard deviation
   - coefficient of variation (CV)
-  - time in 70-180, 70-160, and 70-140 mg/dL
-  - time >180, >250, <70, and <54 mg/dL
+  - clock time in 70-180, 70-160, and 70-140 mg/dL
+  - clock time >180, >250, <70, and <54 mg/dL
   - longest continuous 70-180, 70-160, 70-140, and <=180 streaks
   - best locally stable in-range plateau using a ±10 mg/dL anchor tolerance
 
-Missing readings do not count toward percentages.
-More than 20 consecutive missing minutes breaks a continuity/steady-state streak.
+Range totals are clock time. A gap of up to 20 minutes counts toward a range
+only when both readings are in that range. A longer gap, or a gap that crosses
+70 or 180, is omitted. Mean, GMI, standard deviation, and CV use stored
+readings only. More than 20 consecutive missing minutes also breaks a streak.
 
 All timestamps are UTC.
 
@@ -115,6 +117,148 @@ function lowerBound(array $points, int $target): int
     }
 
     return $lo;
+}
+
+/**
+ * Clock minutes in each clinical range for [startTs, endTs].
+ *
+ * Each stored reading counts as one minute. A hole of 1..MAX_GAP_MINUTES
+ * between two readings is filled only for ranges that contain both values,
+ * so a day boundary does not drop time and a threshold crossing is not
+ * assigned to either side. Longer holes stay unclassified.
+ *
+ * @param array<int, array{0: int, 1: int}> $points
+ * @return array{
+ *     classified: int,
+ *     in70_180: int,
+ *     in70_160: int,
+ *     in70_140: int,
+ *     above180: int,
+ *     above250: int,
+ *     below70: int,
+ *     below54: int
+ * }
+ */
+function rangeClockMinutes(array $points, int $from, int $to, int $startTs, int $endTs): array
+{
+    $acc = [
+        'classified' => 0,
+        'in70_180' => 0,
+        'in70_160' => 0,
+        'in70_140' => 0,
+        'above180' => 0,
+        'above250' => 0,
+        'below70' => 0,
+        'below54' => 0,
+    ];
+
+    $addReading = static function (array &$acc, int $value, int $minutes): void {
+        if ($minutes <= 0) {
+            return;
+        }
+
+        $acc['classified'] += $minutes;
+        if ($value >= LOW && $value <= TARGET_HIGH) {
+            $acc['in70_180'] += $minutes;
+        }
+        if ($value >= LOW && $value <= TIGHT_160) {
+            $acc['in70_160'] += $minutes;
+        }
+        if ($value >= LOW && $value <= TIGHT_140) {
+            $acc['in70_140'] += $minutes;
+        }
+        if ($value > TARGET_HIGH) {
+            $acc['above180'] += $minutes;
+        }
+        if ($value > VERY_HIGH) {
+            $acc['above250'] += $minutes;
+        }
+        if ($value < LOW) {
+            $acc['below70'] += $minutes;
+        }
+        if ($value < VERY_LOW) {
+            $acc['below54'] += $minutes;
+        }
+    };
+
+    $addAgreedGap = static function (array &$acc, int $left, int $right, int $minutes): void {
+        if ($minutes <= 0) {
+            return;
+        }
+
+        $sameSide = ($left >= LOW && $left <= TARGET_HIGH && $right >= LOW && $right <= TARGET_HIGH)
+            || ($left > TARGET_HIGH && $right > TARGET_HIGH)
+            || ($left < LOW && $right < LOW);
+        if (!$sameSide) {
+            return;
+        }
+
+        $acc['classified'] += $minutes;
+        if ($left >= LOW && $left <= TARGET_HIGH && $right >= LOW && $right <= TARGET_HIGH) {
+            $acc['in70_180'] += $minutes;
+        }
+        if ($left >= LOW && $left <= TIGHT_160 && $right >= LOW && $right <= TIGHT_160) {
+            $acc['in70_160'] += $minutes;
+        }
+        if ($left >= LOW && $left <= TIGHT_140 && $right >= LOW && $right <= TIGHT_140) {
+            $acc['in70_140'] += $minutes;
+        }
+        if ($left > TARGET_HIGH && $right > TARGET_HIGH) {
+            $acc['above180'] += $minutes;
+        }
+        if ($left > VERY_HIGH && $right > VERY_HIGH) {
+            $acc['above250'] += $minutes;
+        }
+        if ($left < LOW && $right < LOW) {
+            $acc['below70'] += $minutes;
+        }
+        if ($left < VERY_LOW && $right < VERY_LOW) {
+            $acc['below54'] += $minutes;
+        }
+    };
+
+    $fillBetween = static function (
+        array &$acc,
+        int $leftTs,
+        int $leftV,
+        int $rightTs,
+        int $rightV
+    ) use ($startTs, $endTs, $addAgreedGap): void {
+        $fullGap = intdiv($rightTs - $leftTs, 60) - 1;
+        if ($fullGap <= 0 || $fullGap > MAX_GAP_MINUTES) {
+            return;
+        }
+
+        $first = max($leftTs + 60, $startTs);
+        $last = min($rightTs - 60, $endTs);
+        if ($last < $first) {
+            return;
+        }
+
+        $addAgreedGap($acc, $leftV, $rightV, intdiv($last - $first, 60) + 1);
+    };
+
+    if ($from > 0 && $from < $to) {
+        $fillBetween(
+            $acc,
+            $points[$from - 1][0],
+            $points[$from - 1][1],
+            $points[$from][0],
+            $points[$from][1]
+        );
+    }
+
+    for ($i = $from; $i < $to; $i++) {
+        [$ts, $value] = $points[$i];
+        if ($ts >= $startTs && $ts <= $endTs) {
+            $addReading($acc, $value, 1);
+        }
+        if ($i + 1 < $to) {
+            $fillBetween($acc, $ts, $value, $points[$i + 1][0], $points[$i + 1][1]);
+        }
+    }
+
+    return $acc;
 }
 
 function makeStreakState(): array
@@ -351,6 +495,10 @@ function printStreak(string $label, ?array $s): void
     );
 }
 
+if (PHP_SAPI !== 'cli' || !isset($argv[0]) || realpath($argv[0]) !== realpath(__FILE__)) {
+    return;
+}
+
 if ($argc !== 2 || in_array($argv[1] ?? '', ['-h', '--help'], true)) {
     usage();
 }
@@ -442,7 +590,7 @@ echo "Source:        {$file}\n";
 echo "First reading: " . fmtTs($firstObserved) . " UTC\n";
 echo "Last reading:  " . fmtTs($lastObserved) . " UTC\n";
 echo "Elapsed span:  " . fmtDuration($totalSpanMinutes) . "\n";
-echo "Gap rule:      >" . MAX_GAP_MINUTES . " missing minutes breaks continuity\n";
+echo "Gap rule:      <=" . MAX_GAP_MINUTES . " missing minutes count when both readings share the range; longer gaps are omitted\n";
 echo "\n";
 
 foreach ($windows as [$label, $days]) {
@@ -465,29 +613,15 @@ foreach ($windows as [$label, $days]) {
     $sum = 0.0;
     $sumSq = 0.0;
 
-    $in70_180 = 0;
-    $in70_160 = 0;
-    $in70_140 = 0;
-    $above180 = 0;
-    $above250 = 0;
-    $below70 = 0;
-    $below54 = 0;
-
     for ($i = $from; $i < $to; $i++) {
         $v = $points[$i][1];
 
         $count++;
         $sum += $v;
         $sumSq += $v * $v;
-
-        if ($v >= 70 && $v <= 180) $in70_180++;
-        if ($v >= 70 && $v <= 160) $in70_160++;
-        if ($v >= 70 && $v <= 140) $in70_140++;
-        if ($v > 180) $above180++;
-        if ($v > 250) $above250++;
-        if ($v < 70) $below70++;
-        if ($v < 54) $below54++;
     }
+
+    $ranges = rangeClockMinutes($points, $from, $to, $startTs, $lastObserved);
 
     $mean = $count > 0 ? $sum / $count : NAN;
     $variance = $count > 0 ? max(0.0, ($sumSq / $count) - ($mean * $mean)) : NAN;
@@ -516,14 +650,15 @@ foreach ($windows as [$label, $days]) {
     printf("Std dev:       %.1f mg/dL\n", $sd);
     printf("CV:            %.1f%%\n", $cv);
 
-    echo "\nRanges\n";
-    printf("  %-22s %8s  (%s)\n", "70-180 mg/dL:", pct($in70_180, $count), fmtDuration($in70_180));
-    printf("  %-22s %8s  (%s)\n", "70-160 mg/dL:", pct($in70_160, $count), fmtDuration($in70_160));
-    printf("  %-22s %8s  (%s)\n", "70-140 mg/dL:", pct($in70_140, $count), fmtDuration($in70_140));
-    printf("  %-22s %8s  (%s)\n", ">180 mg/dL:", pct($above180, $count), fmtDuration($above180));
-    printf("  %-22s %8s  (%s)\n", ">250 mg/dL:", pct($above250, $count), fmtDuration($above250));
-    printf("  %-22s %8s  (%s)\n", "<70 mg/dL:", pct($below70, $count), fmtDuration($below70));
-    printf("  %-22s %8s  (%s)\n", "<54 mg/dL:", pct($below54, $count), fmtDuration($below54));
+    echo "\nRanges (clock time)\n";
+    $clock = $ranges['classified'];
+    printf("  %-22s %8s  (%s)\n", "70-180 mg/dL:", pct($ranges['in70_180'], $clock), fmtDuration($ranges['in70_180']));
+    printf("  %-22s %8s  (%s)\n", "70-160 mg/dL:", pct($ranges['in70_160'], $clock), fmtDuration($ranges['in70_160']));
+    printf("  %-22s %8s  (%s)\n", "70-140 mg/dL:", pct($ranges['in70_140'], $clock), fmtDuration($ranges['in70_140']));
+    printf("  %-22s %8s  (%s)\n", ">180 mg/dL:", pct($ranges['above180'], $clock), fmtDuration($ranges['above180']));
+    printf("  %-22s %8s  (%s)\n", ">250 mg/dL:", pct($ranges['above250'], $clock), fmtDuration($ranges['above250']));
+    printf("  %-22s %8s  (%s)\n", "<70 mg/dL:", pct($ranges['below70'], $clock), fmtDuration($ranges['below70']));
+    printf("  %-22s %8s  (%s)\n", "<54 mg/dL:", pct($ranges['below54'], $clock), fmtDuration($ranges['below54']));
 
     echo "\nLongest continuous streaks\n";
     printStreak("70-180 mg/dL", $streaks['70-180']);
