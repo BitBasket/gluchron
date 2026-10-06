@@ -207,7 +207,7 @@ function showHelp(): void
     Options:
       --allow=N           Allow brief excursions of up to N minutes without
                           breaking a streak. Default: 0 (strict).
-      --min=N             Only show streaks of at least N minutes.
+      --min-duration=N    Only show streaks of at least N minutes.
                           Default: no minimum.
       --limit=N           Show at most the N longest streaks per criterion.
                           Use -1 for all. Default: 5
@@ -375,8 +375,8 @@ function parseArguments(array $argv): array
             continue;
         }
 
-        if (str_starts_with($argument, '--min=')) {
-            $value = substr($argument, strlen('--min='));
+        if (str_starts_with($argument, '--min-duration=')) {
+            $value = substr($argument, strlen('--min-duration='));
 
             if (!ctype_digit($value)) {
                 throw new InvalidArgumentException(
@@ -441,7 +441,7 @@ function parseArguments(array $argv): array
         throw new InvalidArgumentException(
             'Usage: php find-threshold-streaks.php FILE.csv '
             . '[--above=N|--below=N|--max=N|--range=A-B|--band=C±N] '
-            . '[--allow=0] [--min=N] [--limit=5]'
+            . '[--allow=0] [--min-duration=N] [--limit=5]'
         );
     }
 

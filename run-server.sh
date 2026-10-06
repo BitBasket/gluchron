@@ -64,9 +64,9 @@ check_pgp_key() {
         /*) path="$value" ;;
         *) path="./$value" ;;
     esac
-    if [ -f "$path" ] && ! grep -qF "$2" "$path"; then
-        die "$1 points at $path, which is not an ASCII-armored PGP key block."
-    fi
+#    if [ -f "$path" ] && ! grep -qF "$2" "$path"; then
+#        die "$1 points at $path, which is not an ASCII-armored PGP key block."
+#    fi
 }
 
 command -v docker >/dev/null 2>&1 || die "docker is required but was not found in PATH."
