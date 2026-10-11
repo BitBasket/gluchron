@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#07131a">
-  <title>30-day glucose change — GluChron</title>
+  <title>Glucose change — GluChron</title>
   <style>
     :root {
       --bg: #07131a;
@@ -88,23 +88,19 @@
   <main>
     <h1>My GluChron</h1>
     <p class="lede">
-      19 August through 21 September 2026. Dense minute-grid from
-      <code>glucose.csv</code>, local days UTC+3, no glucose-lowering medication.
-      Daily bars use UTC calendar days from the dense CSV. Overnight medians
-      use 02:00–06:00 local (UTC+3). Early days are LibreLink historic samples;
-      live 1-minute GluChron begins around 2 September.
+      19 August through 11 October 2026. Dense minute-grid from <code>glucose.csv</code>, local time UTC+3. Daily bars use UTC calendar days. Overnight medians use 02:00–06:00 local. Early days are sparse LibreLink samples; denser readings begin 2 September. 11 Oct is partial, through 06:27 local.
     </p>
     <div class="stats">
-      <div class="stat"><b>310 → 136</b><span>daily mean, mg/dL</span></div>
-      <div class="stat"><b>10.7% → 6.6%</b><span>GMI from mean glucose</span></div>
-      <div class="stat"><b>0% → 75%</b><span>time in 70–180</span></div>
+      <div class="stat"><b>308 → 131</b><span>daily mean, 19 Aug → 10 Oct</span></div>
+      <div class="stat"><b>10.7% → 6.4%</b><span>GMI from those daily means</span></div>
+      <div class="stat"><b>0% → 88%</b><span>time in 70–180</span></div>
       <div class="stat"><b>113 hours</b><span>longest streak &gt;180, 21–25 Aug</span></div>
     </div>
     
     <figure>
-      <img src="00-thirty-day-change.svg" alt="The 30-day change">
+      <img src="00-thirty-day-change.svg" alt="The change, 19 Aug–11 Oct">
       <figcaption>
-        <strong>The 30-day change</strong>
+        <strong>The change, 19 Aug–11 Oct</strong>
         Daily mean and overnight median on top; stacked time-in-range below. GMI uses 3.31 + 0.02392 × mean.
       </figcaption>
     </figure>
@@ -112,28 +108,28 @@
       <img src="01-daily-mean-overnight.svg" alt="Daily mean, median, and overnight floor">
       <figcaption>
         <strong>Daily mean, median, and overnight floor</strong>
-        The overnight median fell faster than the 24-hour mean. 11 Sep is the last fully hyperglycemic day; 19–20 Sep are the first lows.
+        Overnight medians averaged 296 in 19–25 Aug and 129 in 4–10 Oct. All-day means averaged 288 and 137. 30 Sep rebounds to a daily mean of 245. Readings below 70 fall on 19–20 Sep, 7 Oct, 9–10 Oct. The lowest value is 52. Endpoint stats use the last day with at least 70% of minutes filled, 10 Oct.
       </figcaption>
     </figure>
     <figure>
       <img src="02-time-in-range.svg" alt="Time in range by day">
       <figcaption>
         <strong>Time in range by day</strong>
-        Orange is time above 250, yellow 181–250, green 70–180, dark red below 70. Green takes over after 16 Sep; red appears only on 19–20 Sep.
+        Orange is time above 250, yellow 181–250, green 70–180, dark red below 70. 4–10 Oct is mostly 70–180. Time below 70 shows on 19–20 Sep, 7 Oct, 9–10 Oct.
       </figcaption>
     </figure>
     <figure>
       <img src="03-glucose-trace.svg" alt="Five-minute overview trace">
       <figcaption>
         <strong>Five-minute overview trace</strong>
-        The shaded August band is the 113-hour stretch continuously above 180, peak 433. Color follows the same 70 / 180 / 250 bands.
+        The shaded band is 113 hours 29 minutes continuously above 180 (21–25 Aug), peak 433. Color follows the same 70 / 180 / 250 bands.
       </figcaption>
     </figure>
     <figure>
       <img src="04-early-vs-recent-clock.svg" alt="Clock-day early versus recent">
       <figcaption>
         <strong>Clock-day early versus recent</strong>
-        Hour-of-day median and IQR for 19–25 Aug versus 16–21 Sep. The whole circadian floor dropped; the overnight hours dropped furthest.
+        Hour-of-day median and IQR for 19–25 Aug versus 4–10 Oct. 19–25 Aug is sparse LibreLink history; 4–10 Oct is the latest week of filled days.
       </figcaption>
     </figure>
     <p class="lede">PNG copies sit next to each SVG. Regenerate with
