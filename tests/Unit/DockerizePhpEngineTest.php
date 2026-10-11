@@ -14,6 +14,7 @@ final class DockerizePhpEngineTest extends TestCase
 
         $this->assertStringContainsString('FROM phpexperts/php:', $dockerfile);
         $this->assertStringContainsString('https://raw.githubusercontent.com/PHPExpertsInc/dockerize/v15.x/dockerize.sh', $dockerfile);
+        $this->assertStringContainsString('/etc/ssl/certs/ca-certificates.crt', $dockerfile);
         $this->assertStringNotContainsString('php:8.4-cli-bookworm', $dockerfile);
         $this->assertDoesNotMatchRegularExpression('/^FROM php:/m', $dockerfile);
     }
