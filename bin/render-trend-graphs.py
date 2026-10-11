@@ -737,7 +737,8 @@ def lede_html(story: dict) -> str:
         "Dense minute-grid from <code>glucose.csv</code>, "
         f"local time UTC+{story['tz_hours']:g}. "
         "Daily bars use UTC calendar days. Overnight medians use 02:00–06:00 local. "
-        f"Early days are sparse LibreLink samples; denser readings begin {live.day} {live.strftime('%B')}."
+        f"Early days are sparse LibreLink samples; denser readings begin {live.day} {live.strftime('%B')}. "
+        "No glucose-lowering medication."
         f"{partial}"
     )
 
